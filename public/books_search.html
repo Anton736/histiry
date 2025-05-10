@@ -1,0 +1,1003 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Поиск книг</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background-color: #f5f5f5;
+            padding: 2rem;
+        }
+
+        .search-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 2rem;
+            gap: 1rem;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 1rem;
+            font-size: 1rem;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            transition: border-color 0.3s;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        .search-mode {
+            display: flex;
+            gap: 1rem;
+            background-color: #f0f0f0;
+            padding: 0.5rem;
+            border-radius: 5px;
+        }
+
+        .mode-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            background-color: transparent;
+            transition: background-color 0.3s;
+        }
+
+        .mode-btn.active {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .books-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .book-card {
+            position: relative;
+            background-color: white;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 1.5rem;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .book-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .book-card:hover .upload-btn {
+            opacity: 1;
+        }
+
+        .book-card:hover .delete-btn {
+            opacity: 1;
+        }
+
+        .book-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #333;
+            cursor: pointer;
+            transition: color 0.3s;
+        }
+
+        .book-title:hover {
+            color: #4CAF50;
+        }
+
+        .book-author {
+            color: #666;
+            font-style: italic;
+        }
+
+        .highlight {
+            background-color: #ffeb3b;
+            padding: 0 2px;
+        }
+
+        .highlight-author {
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .book-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .book-image-placeholder {
+            width: 100%;
+            height: 200px;
+            background-color: #f0f0f0;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 0.9rem;
+        }
+
+        .upload-btn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(76, 175, 80, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .upload-btn:hover {
+            background-color: #45a049;
+        }
+
+        .delete-btn {
+            position: absolute;
+            top: 10px;
+            right: 50px;
+            background-color: rgba(244, 67, 54, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .delete-btn:hover {
+            background-color: #d32f2f;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 2rem;
+            color: #666;
+            display: none;
+        }
+
+        .add-book-form {
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-row {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .form-group {
+            flex: 1;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #555;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .add-btn {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+
+        .add-btn:hover {
+            background-color: #45a049;
+        }
+
+        .preview-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-top: 0.5rem;
+            display: none;
+        }
+
+        .audio-preview {
+            margin-top: 0.5rem;
+            width: 100%;
+        }
+
+        .audio-preview audio {
+            width: 100%;
+        }
+
+        .audio-preview-label {
+            display: block;
+            margin-top: 0.5rem;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .header {
+            background-color: #4CAF50;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+            position: relative;
+        }
+
+        .user-profile {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 2px solid white;
+        }
+
+        .user-name {
+            color: white;
+            font-size: 0.9rem;
+        }
+
+        .profile-dropdown {
+            position: absolute;
+            right: 20px;
+            top: 100%;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 1rem;
+            display: none;
+            z-index: 1000;
+            min-width: 200px;
+        }
+
+        .profile-dropdown.active {
+            display: block;
+        }
+
+        .profile-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .profile-header .user-avatar {
+            width: 60px;
+            height: 60px;
+        }
+
+        .profile-info {
+            flex: 1;
+        }
+
+        .profile-info h3 {
+            margin: 0;
+            color: #333;
+            font-size: 1rem;
+        }
+
+        .profile-info p {
+            margin: 5px 0 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .profile-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .profile-btn {
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            background: #f5f5f5;
+            color: #333;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            text-align: left;
+        }
+
+        .profile-btn:hover {
+            background: #e0e0e0;
+        }
+
+        .profile-btn.logout {
+            background: #ff4444;
+            color: white;
+        }
+
+        .profile-btn.logout:hover {
+            background: #cc0000;
+        }
+
+        /* Стили для модального окна */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            position: relative;
+        }
+
+        .modal-image {
+            max-width: 100%;
+            max-height: 90vh;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .modal-close {
+            position: absolute;
+            top: -40px;
+            right: 0;
+            color: white;
+            font-size: 30px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            padding: 5px;
+        }
+
+        .modal-close:hover {
+            color: #ff4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Поиск книг</h1>
+        <div class="user-profile" id="userProfile">
+            <img src="" alt="Аватар" class="user-avatar" id="userAvatar">
+            <span class="user-name" id="userName"></span>
+        </div>
+        <div class="profile-dropdown" id="profileDropdown">
+            <div class="profile-header">
+                <img src="" alt="Аватар" class="user-avatar" id="profileAvatar">
+                <div class="profile-info">
+                    <h3 id="profileName"></h3>
+                    <p id="profileEmail"></p>
+                </div>
+            </div>
+            <div class="profile-actions">
+                <button class="profile-btn" id="editProfileBtn">Редактировать профиль</button>
+                <button class="profile-btn" id="changeAvatarBtn">Изменить аватар</button>
+                <button class="profile-btn logout" id="logoutBtn">Выйти</button>
+            </div>
+        </div>
+    </div>
+    <div class="search-container">
+        <div class="add-book-form">
+            <h3 style="margin-bottom: 1rem;">Добавить новую книгу</h3>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="bookTitle">Название книги</label>
+                    <input type="text" id="bookTitle" required>
+                </div>
+                <div class="form-group">
+                    <label for="bookAuthor">Автор</label>
+                    <input type="text" id="bookAuthor" required>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="bookImage">Обложка книги</label>
+                <input type="file" id="bookImage" accept="image/*" onchange="previewNewBookImage(this)">
+                <img id="imagePreview" class="preview-image">
+            </div>
+            <div class="form-group">
+                <label for="bookAudio">Аудиофайл книги</label>
+                <input type="file" id="bookAudio" accept="audio/*" onchange="previewNewBookAudio(this)">
+                <div id="audioPreview" class="audio-preview"></div>
+                <span class="audio-preview-label">Поддерживаемые форматы: MP3, WAV, OGG</span>
+            </div>
+            <button class="add-btn" onclick="addNewBook()">Добавить книгу</button>
+        </div>
+
+        <div class="search-header">
+            <input type="text" 
+                   class="search-input" 
+                   id="searchInput" 
+                   placeholder="Введите текст для поиска...">
+            
+            <div class="search-mode">
+                <button class="mode-btn active" data-mode="title">По названию</button>
+                <button class="mode-btn" data-mode="author">По автору</button>
+            </div>
+        </div>
+
+        <div class="no-results" id="noResults">
+            Ничего не найдено
+        </div>
+
+        <div class="books-list" id="booksList">
+            <div class="book-card" data-title="Война и мир" data-author="Лев Толстой">
+                <div class="book-image-placeholder">Нет изображения</div>
+                <input type="file" class="upload-btn" accept="image/*" onchange="handleImageUpload(this)">
+                <button class="delete-btn">×</button>
+                <div class="book-title">Война и мир</div>
+                <div class="book-author">Лев Толстой</div>
+            </div>
+            <div class="book-card" data-title="Преступление и наказание" data-author="Фёдор Достоевский">
+                <div class="book-image-placeholder">Нет изображения</div>
+                <input type="file" class="upload-btn" accept="image/*" onchange="handleImageUpload(this)">
+                <button class="delete-btn">×</button>
+                <div class="book-title">Преступление и наказание</div>
+                <div class="book-author">Фёдор Достоевский</div>
+            </div>
+            <div class="book-card" data-title="Мастер и Маргарита" data-author="Михаил Булгаков">
+                <div class="book-image-placeholder">Нет изображения</div>
+                <input type="file" class="upload-btn" accept="image/*" onchange="handleImageUpload(this)">
+                <button class="delete-btn">×</button>
+                <div class="book-title">Мастер и Маргарита</div>
+                <div class="book-author">Михаил Булгаков</div>
+            </div>
+            <div class="book-card" data-title="Анна Каренина" data-author="Лев Толстой">
+                <div class="book-image-placeholder">Нет изображения</div>
+                <input type="file" class="upload-btn" accept="image/*" onchange="handleImageUpload(this)">
+                <button class="delete-btn">×</button>
+                <div class="book-title">Анна Каренина</div>
+                <div class="book-author">Лев Толстой</div>
+            </div>
+            <div class="book-card" data-title="Евгений Онегин" data-author="Александр Пушкин">
+                <div class="book-image-placeholder">Нет изображения</div>
+                <input type="file" class="upload-btn" accept="image/*" onchange="handleImageUpload(this)">
+                <button class="delete-btn">×</button>
+                <div class="book-title">Евгений Онегин</div>
+                <div class="book-author">Александр Пушкин</div>
+            </div>
+            <div class="book-card" data-title="Отцы и дети" data-author="Иван Тургенев">
+                <div class="book-image-placeholder">Нет изображения</div>
+                <input type="file" class="upload-btn" accept="image/*" onchange="handleImageUpload(this)">
+                <button class="delete-btn">×</button>
+                <div class="book-title">Отцы и дети</div>
+                <div class="book-author">Иван Тургенев</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Добавляем модальное окно -->
+    <div class="modal" id="avatarModal">
+        <div class="modal-content">
+            <button class="modal-close" id="modalClose">&times;</button>
+            <img src="" alt="Аватар" class="modal-image" id="modalImage">
+        </div>
+    </div>
+
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const booksList = document.getElementById('booksList');
+        const noResults = document.getElementById('noResults');
+        const modeButtons = document.querySelectorAll('.mode-btn');
+        let bookCards = document.querySelectorAll('.book-card');
+        let currentMode = 'title';
+
+        // Функция сохранения книг в localStorage
+        function saveBooks() {
+            const books = Array.from(bookCards).map(card => ({
+                title: card.dataset.title,
+                author: card.dataset.author,
+                image: card.querySelector('.book-image')?.src || null,
+                description: card.dataset.description || 'Описание книги будет добавлено позже.',
+                audio: card.dataset.audio || '',
+                isUserAdded: card.dataset.isUserAdded === 'true'
+            }));
+            localStorage.setItem('books', JSON.stringify(books));
+        }
+
+        // Функция загрузки книг из localStorage
+        function loadBooks() {
+            const savedBooks = localStorage.getItem('books');
+            if (savedBooks) {
+                // Очищаем существующие карточки
+                booksList.innerHTML = '';
+                
+                const books = JSON.parse(savedBooks);
+                books.forEach(book => {
+                    const card = document.createElement('div');
+                    card.className = 'book-card';
+                    card.setAttribute('data-title', book.title);
+                    card.setAttribute('data-author', book.author);
+                    card.setAttribute('data-description', book.description);
+                    card.setAttribute('data-audio', book.audio);
+                    card.setAttribute('data-is-user-added', book.isUserAdded);
+
+                    if (book.image) {
+                        const img = document.createElement('img');
+                        img.src = book.image;
+                        img.className = 'book-image';
+                        card.appendChild(img);
+                    } else {
+                        const placeholder = document.createElement('div');
+                        placeholder.className = 'book-image-placeholder';
+                        placeholder.textContent = 'Нет изображения';
+                        card.appendChild(placeholder);
+                    }
+
+                    const uploadBtn = document.createElement('input');
+                    uploadBtn.type = 'file';
+                    uploadBtn.className = 'upload-btn';
+                    uploadBtn.accept = 'image/*';
+                    uploadBtn.onchange = function() { handleImageUpload(this); };
+                    card.appendChild(uploadBtn);
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'delete-btn';
+                    deleteBtn.textContent = '×';
+                    deleteBtn.onclick = function() {
+                        if (confirm('Вы уверены, что хотите удалить эту книгу?')) {
+                            // Удаляем книгу из localStorage
+                            const savedBooks = JSON.parse(localStorage.getItem('books') || '[]');
+                            const updatedBooks = savedBooks.filter(b => b.title !== book.title);
+                            localStorage.setItem('books', JSON.stringify(updatedBooks));
+                            
+                            // Удаляем связанные данные
+                            localStorage.removeItem(`comments_${book.title}`);
+                            localStorage.removeItem(`reviews_${book.title}`);
+                            localStorage.removeItem(`gallery_${book.title}`);
+                            
+                            // Удаляем карточку
+                            card.remove();
+                            filterBooks();
+                        }
+                    };
+                    card.appendChild(deleteBtn);
+
+                    const titleElement = document.createElement('div');
+                    titleElement.className = 'book-title';
+                    titleElement.textContent = book.title;
+                    titleElement.onclick = function() {
+                        window.location.href = `book_details.html?title=${encodeURIComponent(book.title)}`;
+                    };
+                    card.appendChild(titleElement);
+
+                    const authorElement = document.createElement('div');
+                    authorElement.className = 'book-author';
+                    authorElement.textContent = book.author;
+                    card.appendChild(authorElement);
+
+                    booksList.appendChild(card);
+                });
+                bookCards = document.querySelectorAll('.book-card');
+            }
+        }
+
+        // Загружаем сохраненные книги при загрузке страницы
+        loadBooks();
+
+        // Обработчик переключения режима поиска
+        modeButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                modeButtons.forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                currentMode = button.dataset.mode;
+                filterBooks();
+            });
+        });
+
+        // Функция фильтрации книг
+        function filterBooks() {
+            const searchTerm = searchInput.value.toLowerCase();
+            let hasVisibleItems = false;
+
+            bookCards.forEach(card => {
+                const searchField = currentMode === 'title' 
+                    ? card.dataset.title 
+                    : card.dataset.author;
+                
+                // Очищаем предыдущее выделение
+                const textElement = currentMode === 'title' 
+                    ? card.querySelector('.book-title')
+                    : card.querySelector('.book-author');
+                textElement.innerHTML = textElement.textContent;
+                
+                if (searchTerm) {
+                    let searchRegex;
+                    if (currentMode === 'author') {
+                        // Для поиска по автору: 'ё' может быть и 'е', и 'ё'
+                        searchRegex = new RegExp(
+                            searchTerm
+                                .replace(/ё/g, '[ё]')
+                                .replace(/е/g, '[её]'),
+                            'gi'
+                        );
+                    } else {
+                        // Для поиска по названию: 'е' только как 'е', 'ё' только как 'ё'
+                        searchRegex = new RegExp(
+                            searchTerm
+                                .replace(/ё/g, '[ё]')
+                                .replace(/е/g, '[её]'),
+                            'gi'
+                        );
+                    }
+
+                    if (searchRegex.test(searchField.toLowerCase())) {
+                        card.style.display = 'block';
+                        hasVisibleItems = true;
+                        
+                        const text = textElement.textContent;
+                        const highlightedText = text.replace(searchRegex, match => 
+                            currentMode === 'title' 
+                                ? `<span class="highlight">${match}</span>`
+                                : `<span class="highlight-author">${match}</span>`
+                        );
+                        textElement.innerHTML = highlightedText;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                } else {
+                    // При пустой строке показываем все книги
+                    card.style.display = 'block';
+                    hasVisibleItems = true;
+                }
+            });
+
+            // Показываем/скрываем сообщение "Ничего не найдено"
+            noResults.style.display = hasVisibleItems ? 'none' : 'block';
+        }
+
+        // Функция загрузки изображения
+        function handleImageUpload(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const card = input.closest('.book-card');
+                    const placeholder = card.querySelector('.book-image-placeholder');
+                    
+                    // Создаем новый элемент изображения
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'book-image';
+                    
+                    // Заменяем placeholder на изображение
+                    placeholder.replaceWith(img);
+                    
+                    // Сохраняем изменения
+                    saveBooks();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Функция предпросмотра изображения
+        function previewNewBookImage(input) {
+            const preview = document.getElementById('imagePreview');
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        // Функция предпросмотра аудио
+        function previewNewBookAudio(input) {
+            const preview = document.getElementById('audioPreview');
+            if (input.files && input.files[0]) {
+                const audio = document.createElement('audio');
+                audio.controls = true;
+                audio.src = URL.createObjectURL(input.files[0]);
+                preview.innerHTML = '';
+                preview.appendChild(audio);
+            }
+        }
+
+        // Функция добавления новой книги
+        function addNewBook() {
+            const title = document.getElementById('bookTitle').value.trim();
+            const author = document.getElementById('bookAuthor').value.trim();
+            const imageFile = document.getElementById('bookImage').files[0];
+            const audioFile = document.getElementById('bookAudio').files[0];
+            
+            if (!title || !author) {
+                alert('Пожалуйста, заполните все поля');
+                return;
+            }
+
+            // Проверяем, существует ли уже книга с таким названием
+            const savedBooks = JSON.parse(localStorage.getItem('books') || '[]');
+            if (savedBooks.some(book => book.title === title)) {
+                alert('Книга с таким названием уже существует');
+                return;
+            }
+
+            // Создаем карточку книги
+            const card = document.createElement('div');
+            card.className = 'book-card';
+            card.setAttribute('data-title', title);
+            card.setAttribute('data-author', author);
+            card.setAttribute('data-description', 'Описание книги будет добавлено позже.');
+            card.setAttribute('data-is-user-added', 'true');
+
+            // Обработка изображения
+            if (imageFile) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    img.className = 'book-image';
+                    card.insertBefore(img, card.firstChild);
+                    card.setAttribute('data-image', e.target.result);
+                };
+                reader.readAsDataURL(imageFile);
+            } else {
+                const placeholder = document.createElement('div');
+                placeholder.className = 'book-image-placeholder';
+                placeholder.textContent = 'Нет изображения';
+                card.insertBefore(placeholder, card.firstChild);
+            }
+
+            // Обработка аудио
+            if (audioFile) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    card.setAttribute('data-audio', e.target.result);
+                };
+                reader.readAsDataURL(audioFile);
+            }
+
+            // Добавляем кнопки управления
+            const uploadBtn = document.createElement('input');
+            uploadBtn.type = 'file';
+            uploadBtn.className = 'upload-btn';
+            uploadBtn.accept = 'image/*';
+            uploadBtn.onchange = function() { handleImageUpload(this); };
+            card.appendChild(uploadBtn);
+
+            const audioUploadBtn = document.createElement('input');
+            audioUploadBtn.type = 'file';
+            audioUploadBtn.className = 'upload-btn';
+            audioUploadBtn.accept = 'audio/*';
+            audioUploadBtn.style.right = '50px';
+            audioUploadBtn.onchange = function() { handleAudioUpload(this); };
+            card.appendChild(audioUploadBtn);
+
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'delete-btn';
+            deleteBtn.textContent = '×';
+            deleteBtn.onclick = function() {
+                if (confirm('Вы уверены, что хотите удалить эту книгу?')) {
+                    // Удаляем книгу из localStorage
+                    const savedBooks = JSON.parse(localStorage.getItem('books') || '[]');
+                    const updatedBooks = savedBooks.filter(b => b.title !== title);
+                    localStorage.setItem('books', JSON.stringify(updatedBooks));
+                    
+                    // Удаляем связанные данные
+                    localStorage.removeItem(`comments_${title}`);
+                    localStorage.removeItem(`reviews_${title}`);
+                    localStorage.removeItem(`gallery_${title}`);
+                    
+                    // Удаляем карточку
+                    card.remove();
+                    filterBooks();
+                }
+            };
+            card.appendChild(deleteBtn);
+
+            // Добавляем заголовок и автора
+            const titleElement = document.createElement('div');
+            titleElement.className = 'book-title';
+            titleElement.textContent = title;
+            titleElement.onclick = function() {
+                window.location.href = `book_details.html?title=${encodeURIComponent(title)}`;
+            };
+            card.appendChild(titleElement);
+
+            const authorElement = document.createElement('div');
+            authorElement.className = 'book-author';
+            authorElement.textContent = author;
+            card.appendChild(authorElement);
+
+            // Добавляем карточку в список
+            booksList.appendChild(card);
+
+            // Очищаем форму
+            document.getElementById('bookTitle').value = '';
+            document.getElementById('bookAuthor').value = '';
+            document.getElementById('bookImage').value = '';
+            document.getElementById('bookAudio').value = '';
+            document.getElementById('imagePreview').style.display = 'none';
+            document.getElementById('audioPreview').innerHTML = '';
+
+            // Сохраняем изменения
+            saveBooks();
+
+            // Обновляем список карточек и применяем текущий фильтр
+            bookCards = document.querySelectorAll('.book-card');
+            filterBooks();
+        }
+
+        // Функция загрузки аудио
+        function handleAudioUpload(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const card = input.closest('.book-card');
+                    card.setAttribute('data-audio', e.target.result);
+                    saveBooks();
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Обработчик события ввода
+        searchInput.addEventListener('input', filterBooks);
+
+        // Загрузка данных пользователя
+        function loadUserProfile() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if (currentUser) {
+                document.getElementById('userAvatar').src = currentUser.avatar || 'https://via.placeholder.com/40';
+                document.getElementById('userName').textContent = `${currentUser.name} ${currentUser.surname}`;
+                document.getElementById('profileAvatar').src = currentUser.avatar || 'https://via.placeholder.com/60';
+                document.getElementById('profileName').textContent = `${currentUser.name} ${currentUser.surname}`;
+                document.getElementById('profileEmail').textContent = currentUser.email;
+            } else {
+                window.location.href = 'login.html';
+            }
+        }
+
+        // Обработчики для профиля
+        document.getElementById('userProfile').addEventListener('click', function() {
+            document.getElementById('profileDropdown').classList.toggle('active');
+        });
+
+        document.getElementById('editProfileBtn').addEventListener('click', function() {
+            window.location.href = 'registration.html?edit=true';
+        });
+
+        document.getElementById('changeAvatarBtn').addEventListener('click', function() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+                        currentUser.avatar = e.target.result;
+                        localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                        
+                        // Обновляем аватары на странице
+                        document.getElementById('userAvatar').src = e.target.result;
+                        document.getElementById('profileAvatar').src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+            input.click();
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'login.html';
+        });
+
+        // Закрытие дропдауна при клике вне его
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.user-profile') && !e.target.closest('.profile-dropdown')) {
+                document.getElementById('profileDropdown').classList.remove('active');
+            }
+        });
+
+        // Загружаем профиль при загрузке страницы
+        loadUserProfile();
+
+        // Функция для открытия модального окна с аватаром
+        function openAvatarModal(imageSrc) {
+            const modal = document.getElementById('avatarModal');
+            const modalImage = document.getElementById('modalImage');
+            modalImage.src = imageSrc;
+            modal.style.display = 'flex';
+        }
+
+        // Функция для закрытия модального окна
+        function closeAvatarModal() {
+            const modal = document.getElementById('avatarModal');
+            modal.style.display = 'none';
+        }
+
+        // Обработчики для модального окна
+        document.getElementById('modalClose').addEventListener('click', closeAvatarModal);
+        document.getElementById('avatarModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeAvatarModal();
+            }
+        });
+
+        // Добавляем обработчики клика на аватары
+        document.getElementById('userAvatar').addEventListener('click', function(e) {
+            e.stopPropagation(); // Предотвращаем всплытие события
+            openAvatarModal(this.src);
+        });
+
+        document.getElementById('profileAvatar').addEventListener('click', function(e) {
+            e.stopPropagation(); // Предотвращаем всплытие события
+            openAvatarModal(this.src);
+        });
+    </script>
+</body>
+</html> 
