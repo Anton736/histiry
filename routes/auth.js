@@ -81,7 +81,7 @@ router.post('/login', [
         }
 
         // Проверяем пароль
-        const isMatch = await user.comparePassword(password);
+        const isMatch = await user.checkPassword(password);
         if (!isMatch) {
             return res.status(400).json({ msg: 'Неверные учетные данные' });
         }
