@@ -199,4 +199,56 @@ document.getElementById('userAvatar').addEventListener('click', function(e) {
 document.getElementById('profileAvatar').addEventListener('click', function(e) {
     e.stopPropagation();
     openAvatarModal(this.src);
+});
+
+// --- ДОБАВЛЯЕМ ОБРАБОТЧИКИ ДЛЯ КНОПКИ И INPUT'ОВ ---
+document.addEventListener('DOMContentLoaded', function() {
+    // Кнопка добавления книги
+    document.getElementById('addBookBtn').addEventListener('click', function() {
+        const title = document.getElementById('bookTitle').value.trim();
+        const author = document.getElementById('bookAuthor').value.trim();
+        const imageFile = document.getElementById('bookImage').files[0];
+        const audioFile = document.getElementById('bookAudio').files[0];
+        if (!title || !author) {
+            alert('Пожалуйста, заполните все поля');
+            return;
+        }
+        addBook(title, author, imageFile, audioFile);
+        // Очищаем форму
+        document.getElementById('bookTitle').value = '';
+        document.getElementById('bookAuthor').value = '';
+        document.getElementById('bookImage').value = '';
+        document.getElementById('bookAudio').value = '';
+        document.getElementById('imagePreview').style.display = 'none';
+        document.getElementById('audioPreview').innerHTML = '';
+    });
+
+    // Предпросмотр изображения
+    document.getElementById('bookImage').addEventListener('change', function() {
+        const preview = document.getElementById('imagePreview');
+        if (this.files && this.files[0]) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+            }
+            reader.readAsDataURL(this.files[0]);
+        } else {
+            preview.style.display = 'none';
+        }
+    });
+
+    // Предпросмотр аудио
+    document.getElementById('bookAudio').addEventListener('change', function() {
+        const preview = document.getElementById('audioPreview');
+        if (this.files && this.files[0]) {
+            const audio = document.createElement('audio');
+            audio.controls = true;
+            audio.src = URL.createObjectURL(this.files[0]);
+            preview.innerHTML = '';
+            preview.appendChild(audio);
+        } else {
+            preview.innerHTML = '';
+        }
+    });
 }); 

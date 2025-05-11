@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Поиск книг</title>
+    <link rel="stylesheet" href="css/books_search.css">
     <style>
         * {
             margin: 0;
@@ -460,16 +461,16 @@
             </div>
             <div class="form-group">
                 <label for="bookImage">Обложка книги</label>
-                <input type="file" id="bookImage" accept="image/*" onchange="previewNewBookImage(this)">
+                <input type="file" id="bookImage" accept="image/*">
                 <img id="imagePreview" class="preview-image">
             </div>
             <div class="form-group">
                 <label for="bookAudio">Аудиофайл книги</label>
-                <input type="file" id="bookAudio" accept="audio/*" onchange="previewNewBookAudio(this)">
+                <input type="file" id="bookAudio" accept="audio/*">
                 <div id="audioPreview" class="audio-preview"></div>
                 <span class="audio-preview-label">Поддерживаемые форматы: MP3, WAV, OGG</span>
             </div>
-            <button class="add-btn" onclick="addNewBook()">Добавить книгу</button>
+            <button class="add-btn" id="addBookBtn">Добавить книгу</button>
         </div>
 
         <div class="search-header">
