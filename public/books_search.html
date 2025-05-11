@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Поиск книг</title>
-    <link rel="stylesheet" href="css/books_search.css">
+    <title>Поиск книг - Histiry</title>
+    <link rel="stylesheet" href="/css/styles.css">
     <style>
         * {
             margin: 0;
@@ -425,81 +425,104 @@
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>Поиск книг</h1>
-        <div class="user-profile" id="userProfile">
-            <img src="" alt="Аватар" class="user-avatar" id="userAvatar">
-            <span class="user-name" id="userName"></span>
-        </div>
-        <div class="profile-dropdown" id="profileDropdown">
-            <div class="profile-header">
-                <img src="" alt="Аватар" class="user-avatar" id="profileAvatar">
-                <div class="profile-info">
-                    <h3 id="profileName"></h3>
-                    <p id="profileEmail"></p>
-                </div>
+    <div class="container">
+        <header>
+            <h1>Библиотека книг</h1>
+            <nav>
+                <button onclick="logout()" class="btn-logout">Выйти</button>
+            </nav>
+        </header>
+
+        <div class="search-section">
+            <div class="search-filters">
+                <input 
+                    type="text" 
+                    id="searchInput" 
+                    placeholder="Поиск по названию или автору"
+                    onkeyup="searchBooks()"
+                >
+                <select id="genreFilter" onchange="searchBooks()">
+                    <option value="">Все жанры</option>
+                    <option value="fiction">Художественная литература</option>
+                    <option value="non-fiction">Научно-популярная</option>
+                    <option value="science">Наука</option>
+                    <option value="history">История</option>
+                    <option value="biography">Биография</option>
+                    <option value="other">Другое</option>
+                </select>
+                <input 
+                    type="number" 
+                    id="yearFilter" 
+                    placeholder="Год издания"
+                    onchange="searchBooks()"
+                >
             </div>
-            <div class="profile-actions">
-                <button class="profile-btn" id="editProfileBtn">Редактировать профиль</button>
-                <button class="profile-btn" id="changeAvatarBtn">Изменить аватар</button>
-                <button class="profile-btn logout" id="logoutBtn">Выйти</button>
+
+            <button onclick="showAddBookForm()" class="btn-add">Добавить книгу</button>
+        </div>
+
+        <div class="books-table">
+            <table id="booksTable">
+                <thead>
+                    <tr>
+                        <th>Название</th>
+                        <th>Автор</th>
+                        <th>Жанр</th>
+                        <th>Год</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Books will be loaded here -->
+                </tbody>
+            </table>
+        </div>
+
+        <div class="pagination">
+            <!-- Pagination will be loaded here -->
+        </div>
+
+        <!-- Add/Edit Book Modal -->
+        <div id="bookModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2 id="modalTitle">Добавить книгу</h2>
+                <form id="bookForm">
+                    <input type="hidden" id="bookId">
+                    <div class="form-group">
+                        <label for="title">Название</label>
+                        <input type="text" id="title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="author">Автор</label>
+                        <input type="text" id="author" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="genre">Жанр</label>
+                        <select id="genre">
+                            <option value="fiction">Художественная литература</option>
+                            <option value="non-fiction">Научно-популярная</option>
+                            <option value="science">Наука</option>
+                            <option value="history">История</option>
+                            <option value="biography">Биография</option>
+                            <option value="other">Другое</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="year">Год издания</label>
+                        <input type="number" id="year" min="1000" max="2024">
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Описание</label>
+                        <textarea id="description" rows="4"></textarea>
+                    </div>
+                    <button type="submit" class="btn-submit">Сохранить</button>
+                </form>
             </div>
         </div>
     </div>
-    <div class="search-container">
-        <div class="add-book-form">
-            <h3 style="margin-bottom: 1rem;">Добавить новую книгу</h3>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="bookTitle">Название книги</label>
-                    <input type="text" id="bookTitle" required>
-                </div>
-                <div class="form-group">
-                    <label for="bookAuthor">Автор</label>
-                    <input type="text" id="bookAuthor" required>
-                </div>
-            </div>
-            <div class="form-group">
-                <label for="bookImage">Обложка книги</label>
-                <input type="file" id="bookImage" accept="image/*">
-                <img id="imagePreview" class="preview-image">
-            </div>
-            <div class="form-group">
-                <label for="bookAudio">Аудиофайл книги</label>
-                <input type="file" id="bookAudio" accept="audio/*">
-                <div id="audioPreview" class="audio-preview"></div>
-                <span class="audio-preview-label">Поддерживаемые форматы: MP3, WAV, OGG</span>
-            </div>
-            <button class="add-btn" id="addBookBtn">Добавить книгу</button>
-        </div>
 
-        <div class="search-header">
-            <input type="text" 
-                   class="search-input" 
-                   id="searchInput" 
-                   placeholder="Введите текст для поиска...">
-            
-            <div class="search-mode">
-                <button class="mode-btn active" data-mode="title">По названию</button>
-                <button class="mode-btn" data-mode="author">По автору</button>
-            </div>
-        </div>
-
-        <div class="no-results" id="noResults">
-            Ничего не найдено
-        </div>
-
-        <div class="books-list" id="booksList"></div>
-    </div>
-
-    <!-- Добавляем модальное окно -->
-    <div class="modal" id="avatarModal">
-        <div class="modal-content">
-            <button class="modal-close" id="modalClose">&times;</button>
-            <img src="" alt="Аватар" class="modal-image" id="modalImage">
-        </div>
-    </div>
-
-    <script src="js/books_search.js"></script>
+    <script src="/js/auth.js"></script>
+    <script src="/js/books.js"></script>
 </body>
 </html> 

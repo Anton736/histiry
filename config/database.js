@@ -1,13 +1,43 @@
 const { Sequelize } = require('sequelize');
 const path = require('path');
 
-// Создаем подключение к SQLite
+// Определяем конфигурацию базы данных в зависимости от окружения
+const getDatabaseConfig = () => {
+    // Если есть переменная окружения DATABASE_URL (для Render), используем её
+    if (process.env.DATABASE_URL) {
+        return {
+            dialect: 'postgres',
+            url: process.env.DATABASE_URL,
+            dialectOptions: {
+                ssl: {
+                    require: true,
+                    rejectUnauthorized: false
+                }
+            },
+            logging: false
+        };
+    }
+    
+    // Для локальной разработки используем SQLite
+    return {
+        dialect: 'sqlite',
+        storage: path.join(__dirname, '../database.sqlite'),
+        logging: false
+    };
+};
+
+// Создаем подключение к базе данных
 const sequelize = new Sequelize({
-    dialect: 'sqlite',
-    storage: path.join(__dirname, '../database.sqlite'),
-    logging: false, // Отключаем логирование SQL-запросов
+    ...getDatabaseConfig(),
     define: {
-        timestamps: true // Добавляем поля createdAt и updatedAt
+        timestamps: true,
+        underscored: true // Используем snake_case для имен полей в БД
+    },
+    pool: {
+        max: 5,
+        min: 0,
+        acquire: 30000,
+        idle: 10000
     }
 });
 
@@ -18,11 +48,21 @@ const initDatabase = async () => {
         await sequelize.authenticate();
         console.log('База данных успешно подключена');
         
-        // Синхронизируем модели с базой данных, но не пересоздаем таблицы
-        await sequelize.sync({ alter: false });
+        // Синхронизируем модели с базой данных
+        // В production используем { alter: true } для безопасного обновления схемы
+        // В development можно использовать { force: true } для пересоздания таблиц
+        const syncOptions = process.env.NODE_ENV === 'production' 
+            ? { alter: true }
+            : { alter: true };
+            
+        await sequelize.sync(syncOptions);
         console.log('Модели синхронизированы с базой данных');
     } catch (error) {
         console.error('Ошибка при инициализации базы данных:', error);
+        // В production не завершаем процесс, а логируем ошибку
+        if (process.env.NODE_ENV !== 'production') {
+            process.exit(1);
+        }
     }
 };
 

@@ -4,94 +4,155 @@ const path = require('path');
 const multer = require('multer');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const { sequelize } = require('./config/database');
 require('dotenv').config();
 
 const app = express();
 
+// Проверка подключения к базе данных
+sequelize.authenticate()
+    .then(() => console.log('База данных подключена успешно'))
+    .catch(err => {
+        console.error('Ошибка подключения к базе данных:', err);
+        if (process.env.NODE_ENV !== 'production') {
+            process.exit(1);
+        }
+    });
+
 // Настройка безопасности
-app.use(helmet()); // Защита от различных веб-уязвимостей
+app.use(helmet({
+    contentSecurityPolicy: {
+        directives: {
+            defaultSrc: ["'self'"],
+            scriptSrc: ["'self'", "'unsafe-inline'"],
+            styleSrc: ["'self'", "'unsafe-inline'"],
+            imgSrc: ["'self'", "data:", "blob:"],
+            connectSrc: ["'self'"],
+            fontSrc: ["'self'"],
+            objectSrc: ["'none'"],
+            mediaSrc: ["'self'"],
+            frameSrc: ["'none'"]
+        }
+    }
+}));
 
 // Ограничение количества запросов
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 минут
-    max: 100 // максимум 100 запросов с одного IP
+    max: process.env.NODE_ENV === 'production' ? 50 : 100, // меньше запросов в production
+    message: { error: 'Слишком много запросов, попробуйте позже' }
 });
-app.use(limiter);
+
+// Применяем ограничение только к API
+app.use('/api/', limiter);
 
 // Настройка CORS
 const corsOptions = {
-    origin: '*',
+    origin: '*', // Разрешаем запросы с любого домена
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'x-auth-token'],
-    credentials: true
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-auth-token'],
+    exposedHeaders: ['x-auth-token'],
+    credentials: true,
+    maxAge: 86400 // 24 часа
 };
 
 // Middleware
 app.use(cors(corsOptions));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static('public')); // Статические файлы (CSS, JS, изображения)
-app.use('/uploads', express.static('uploads')); // Загруженные файлы
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Создаем директорию для загрузок, если её нет
+const uploadDir = path.join(__dirname, 'uploads');
+if (!require('fs').existsSync(uploadDir)) {
+    require('fs').mkdirSync(uploadDir, { recursive: true });
+}
 
 // Настройка Multer для загрузки файлов
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, 'uploads/');
+        cb(null, uploadDir);
     },
     filename: function (req, file, cb) {
-        cb(null, Date.now() + '-' + file.originalname);
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, uniqueSuffix + '-' + file.originalname.replace(/[^a-zA-Z0-9.]/g, '_'));
     }
 });
 
-const upload = multer({ storage: storage });
+const fileFilter = (req, file, cb) => {
+    // Разрешаем только определенные типы файлов
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'audio/mpeg', 'audio/mp3'];
+    if (allowedTypes.includes(file.mimetype)) {
+        cb(null, true);
+    } else {
+        cb(new Error('Неподдерживаемый тип файла'), false);
+    }
+};
 
-// Импортируем модели
-const User = require('./models/User');
-const Book = require('./models/Book');
+const upload = multer({
+    storage: storage,
+    fileFilter: fileFilter,
+    limits: {
+        fileSize: process.env.MAX_FILE_SIZE || 10 * 1024 * 1024 // 10MB по умолчанию
+    }
+});
 
-// Маршруты для API
+// Статические файлы
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads', express.static(uploadDir));
+
+// Маршруты API
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/books', require('./routes/books'));
 
 // Маршруты для веб-страниц
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'index.html'));
-});
+const serveStaticPage = (page) => (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', `${page}.html`));
+};
 
-app.get('/books', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'books_search.html'));
-});
+app.get('/', serveStaticPage('index'));
+app.get('/books', serveStaticPage('books_search'));
+app.get('/book/:id', serveStaticPage('book_details'));
+app.get('/login', serveStaticPage('login'));
+app.get('/register', serveStaticPage('registration'));
 
-app.get('/book/:id', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'book_details.html'));
-});
-
-app.get('/login', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'login.html'));
-});
-
-app.get('/register', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'registration.html'));
+// Обработка 404
+app.use((req, res) => {
+    res.status(404).json({ error: 'Страница не найдена' });
 });
 
 // Обработка ошибок
 app.use((err, req, res, next) => {
-    console.error(err.stack);
-    res.status(500).send('Something broke!');
+    console.error('Ошибка:', err);
+
+    // Обработка ошибок Multer
+    if (err instanceof multer.MulterError) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+            return res.status(400).json({ error: 'Файл слишком большой' });
+        }
+        return res.status(400).json({ error: 'Ошибка загрузки файла' });
+    }
+
+    // Обработка других ошибок
+    const statusCode = err.statusCode || 500;
+    const message = process.env.NODE_ENV === 'production' 
+        ? 'Внутренняя ошибка сервера' 
+        : err.message;
+
+    res.status(statusCode).json({ error: message });
+});
+
+// Graceful shutdown
+process.on('SIGTERM', () => {
+    console.log('Получен сигнал SIGTERM, закрываем соединения...');
+    sequelize.close().then(() => {
+        console.log('Соединения с базой данных закрыты');
+        process.exit(0);
+    });
 });
 
 const PORT = process.env.PORT || 8080;
 const HOST = '0.0.0.0';
 
-// Настройка для работы с Fly.io
-app.use((req, res, next) => {
-    if (req.headers['x-forwarded-proto'] === 'http') {
-        res.redirect(`https://${req.headers.host}${req.url}`);
-    } else {
-        next();
-    }
-});
-
 app.listen(PORT, HOST, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`Сервер запущен на порту ${PORT} в режиме ${process.env.NODE_ENV || 'development'}`);
 }); 

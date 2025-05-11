@@ -3,247 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Форма регистрации</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Arial', sans-serif;
-        }
-
-        body {
-            background-color: #f5f5f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            padding: 2rem;
-        }
-
-        .registration-form {
-            background-color: white;
-            padding: 2rem;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
-            width: 100%;
-            max-width: 500px;
-        }
-
-        .form-title {
-            text-align: center;
-            margin-bottom: 2rem;
-            color: #333;
-        }
-
-        .avatar-section {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .avatar-preview {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-bottom: 1rem;
-            border: 3px solid #4CAF50;
-            cursor: pointer;
-            transition: transform 0.3s;
-        }
-
-        .avatar-preview:hover {
-            transform: scale(1.05);
-        }
-
-        .avatar-upload {
-            display: none;
-        }
-
-        .form-group {
-            margin-bottom: 1.5rem;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: #555;
-        }
-
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 0.8rem;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 1rem;
-            transition: border-color 0.3s;
-        }
-
-        .form-group input:focus, .form-group select:focus {
-            outline: none;
-            border-color: #4CAF50;
-        }
-
-        .form-group input.error, .form-group select.error {
-            border-color: #ff4444;
-        }
-
-        .error-message {
-            color: #ff4444;
-            font-size: 0.8rem;
-            margin-top: 0.3rem;
-            display: none;
-        }
-
-        .submit-btn {
-            width: 100%;
-            padding: 1rem;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        .submit-btn:hover {
-            background-color: #45a049;
-        }
-
-        .submit-btn:disabled {
-            background-color: #cccccc;
-            cursor: not-allowed;
-        }
-
-        .login-link {
-            text-align: center;
-            margin-top: 1rem;
-            padding-top: 1rem;
-            border-top: 1px solid #ddd;
-        }
-
-        .login-link a {
-            color: #4CAF50;
-            text-decoration: none;
-            font-weight: bold;
-            transition: color 0.3s;
-        }
-
-        .login-link a:hover {
-            color: #45a049;
-            text-decoration: underline;
-        }
-
-        .form-row {
-            display: flex;
-            gap: 1rem;
-        }
-
-        .form-row .form-group {
-            flex: 1;
-        }
-
-        .registration-history {
-            margin-top: 2rem;
-            padding: 1rem;
-            background-color: #f8f8f8;
-            border-radius: 5px;
-            display: none;
-        }
-
-        .history-title {
-            font-size: 1.1rem;
-            margin-bottom: 1rem;
-            color: #333;
-        }
-
-        .history-list {
-            list-style: none;
-        }
-
-        .history-item {
-            padding: 0.5rem;
-            border-bottom: 1px solid #ddd;
-            font-size: 0.9rem;
-            color: #666;
-        }
-
-        .history-item:last-child {
-            border-bottom: none;
-        }
-    </style>
+    <title>Регистрация - Histiry</title>
+    <link rel="stylesheet" href="/css/styles.css">
 </head>
 <body>
     <div class="registration-form">
         <h2 class="form-title">Регистрация</h2>
         <form id="registrationForm">
-            <div class="avatar-section">
-                <img src="/images/avatar-default.png" alt="Аватар" class="avatar-preview" id="avatarPreview">
-                <input type="file" id="avatarUpload" class="avatar-upload" accept="image/*">
+            <div class="form-group">
+                <label for="name">Имя пользователя</label>
+                <input 
+                    type="text" 
+                    id="name" 
+                    name="name" 
+                    required 
+                    autocomplete="username"
+                    pattern="[a-zA-Z0-9_]+"
+                    minlength="3"
+                    maxlength="30"
+                    placeholder="Только буквы, цифры и знак подчеркивания"
+                >
+                <div class="error-message" id="nameError"></div>
             </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="name">Имя</label>
-                    <input type="text" id="name" name="name" required autocomplete="given-name">
-                    <div class="error-message" id="nameError"></div>
-                </div>
-                <div class="form-group">
-                    <label for="surname">Фамилия</label>
-                    <input type="text" id="surname" name="surname" required autocomplete="family-name">
-                    <div class="error-message" id="surnameError"></div>
-                </div>
-            </div>
+
             <div class="form-group">
                 <label for="email">Email</label>
-                <input type="email" id="email" name="email" required autocomplete="email">
+                <input 
+                    type="email" 
+                    id="email" 
+                    name="email" 
+                    required 
+                    autocomplete="email"
+                    placeholder="example@domain.com"
+                >
                 <div class="error-message" id="emailError"></div>
             </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="password">Пароль</label>
-                    <input type="password" id="password" name="password" required autocomplete="new-password">
-                    <div class="error-message" id="passwordError"></div>
-                </div>
-                <div class="form-group">
-                    <label for="confirmPassword">Подтверждение пароля</label>
-                    <input type="password" id="confirmPassword" name="confirmPassword" required autocomplete="new-password">
-                    <div class="error-message" id="confirmPasswordError"></div>
-                </div>
-            </div>
-            <div class="form-row">
-                <div class="form-group">
-                    <label for="birthDate">Дата рождения</label>
-                    <input type="date" id="birthDate" name="birthDate" required autocomplete="bday">
-                    <div class="error-message" id="birthDateError"></div>
-                </div>
-                <div class="form-group">
-                    <label for="gender">Пол</label>
-                    <select id="gender" name="gender" required>
-                        <option value="">Выберите пол</option>
-                        <option value="male">Мужской</option>
-                        <option value="female">Женский</option>
-                        <option value="other">Другой</option>
-                    </select>
-                    <div class="error-message" id="genderError"></div>
-                </div>
-            </div>
+
             <div class="form-group">
-                <label for="interests">Интересы (через запятую)</label>
-                <input type="text" id="interests" name="interests" placeholder="Например: книги, музыка, спорт" autocomplete="off">
-                <div class="error-message" id="interestsError"></div>
+                <label for="password">Пароль</label>
+                <input 
+                    type="password" 
+                    id="password" 
+                    name="password" 
+                    required 
+                    autocomplete="new-password"
+                    minlength="6"
+                >
+                <div class="error-message" id="passwordError"></div>
+                <div class="password-requirements">
+                    Пароль должен содержать:
+                    <ul>
+                        <li id="length">минимум 6 символов</li>
+                        <li id="uppercase">хотя бы одну заглавную букву</li>
+                        <li id="number">хотя бы одну цифру</li>
+                        <li id="special">хотя бы один специальный символ</li>
+                    </ul>
+                </div>
             </div>
+
+            <div class="form-group">
+                <label for="confirmPassword">Подтверждение пароля</label>
+                <input 
+                    type="password" 
+                    id="confirmPassword" 
+                    name="confirmPassword" 
+                    required 
+                    autocomplete="new-password"
+                >
+                <div class="error-message" id="confirmPasswordError"></div>
+            </div>
+
             <button type="submit" class="submit-btn">Зарегистрироваться</button>
         </form>
+
         <div class="login-link">
             Уже есть аккаунт? <a href="/login">Войти</a>
         </div>
-        <div class="registration-history" id="registrationHistory">
-            <h3 class="history-title">История регистраций</h3>
-            <ul class="history-list" id="historyList"></ul>
-        </div>
     </div>
 
-    <script src="js/registration.js"></script>
+    <script src="/js/auth.js"></script>
 </body>
 </html> 

@@ -4,8 +4,10 @@ const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const { check, validationResult } = require('express-validator');
-const auth = require('../middleware/auth');
+const { auth, checkRole } = require('../middleware/auth');
 const Book = require('../models/Book');
+const User = require('../models/User');
+const { Op } = require('sequelize');
 
 // Настройка Multer для загрузки файлов
 const storage = multer.diskStorage({
@@ -47,22 +49,89 @@ const upload = multer({
     }
 });
 
+// Валидация для создания/обновления книги
+const bookValidation = [
+    check('title', 'Название книги обязательно')
+        .not()
+        .isEmpty()
+        .trim()
+        .isLength({ min: 1, max: 255 }),
+    check('author', 'Автор обязателен')
+        .not()
+        .isEmpty()
+        .trim()
+        .isLength({ min: 1, max: 255 }),
+    check('description')
+        .optional()
+        .trim()
+        .isLength({ max: 1000 }),
+    check('year')
+        .optional()
+        .isInt({ min: 1000, max: new Date().getFullYear() })
+        .withMessage('Год должен быть между 1000 и текущим годом'),
+    check('genre')
+        .optional()
+        .isIn(['fiction', 'non-fiction', 'science', 'history', 'biography', 'other'])
+        .withMessage('Недопустимый жанр')
+];
+
 // @route   GET api/books
-// @desc    Получить все книги
+// @desc    Получить список книг
 // @access  Public
 router.get('/', async (req, res) => {
     try {
-        const books = await Book.findAll({
-            include: [
-                { model: require('../models/Review') },
-                { model: require('../models/Comment') }
-            ],
-            order: [['createdAt', 'DESC']]
+        const { 
+            page = 1, 
+            limit = 10, 
+            sort = 'createdAt', 
+            order = 'DESC',
+            search,
+            genre,
+            year
+        } = req.query;
+
+        const offset = (page - 1) * limit;
+        const where = {};
+
+        // Поиск по названию или автору
+        if (search) {
+            where[Op.or] = [
+                { title: { [Op.iLike]: `%${search}%` } },
+                { author: { [Op.iLike]: `%${search}%` } }
+            ];
+        }
+
+        // Фильтр по жанру
+        if (genre) {
+            where.genre = genre;
+        }
+
+        // Фильтр по году
+        if (year) {
+            where.year = year;
+        }
+
+        const { count, rows: books } = await Book.findAndCountAll({
+            where,
+            limit: parseInt(limit),
+            offset: parseInt(offset),
+            order: [[sort, order]],
+            include: [{
+                model: User,
+                as: 'addedBy',
+                attributes: ['id', 'username']
+            }]
         });
-        res.json(books);
+
+        res.json({
+            books,
+            totalPages: Math.ceil(count / limit),
+            currentPage: parseInt(page),
+            totalBooks: count
+        });
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Ошибка сервера');
+        console.error('Ошибка при получении списка книг:', err);
+        res.status(500).json({ msg: 'Ошибка сервера' });
     }
 });
 
@@ -72,145 +141,151 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
     try {
         const book = await Book.findByPk(req.params.id, {
-            include: [
-                { model: require('../models/Review') },
-                { model: require('../models/Comment') }
-            ]
+            include: [{
+                model: User,
+                as: 'addedBy',
+                attributes: ['id', 'username']
+            }]
         });
-        
+
         if (!book) {
             return res.status(404).json({ msg: 'Книга не найдена' });
         }
 
         res.json(book);
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Ошибка сервера');
+        console.error('Ошибка при получении книги:', err);
+        res.status(500).json({ msg: 'Ошибка сервера' });
     }
 });
 
 // @route   POST api/books
 // @desc    Добавить новую книгу
-// @access  Private
-router.post('/', [
-    auth,
-    upload.fields([
-        { name: 'coverImage', maxCount: 1 },
-        { name: 'audioFile', maxCount: 1 }
-    ]),
-    [
-        check('title', 'Название обязательно').not().isEmpty(),
-        check('author', 'Автор обязателен').not().isEmpty(),
-        check('description', 'Описание обязательно').not().isEmpty(),
-        check('genre', 'Жанр обязателен').not().isEmpty()
-    ]
-], async (req, res) => {
+// @access  Private (требуется подтверждение email)
+router.post('/', [auth, bookValidation], async (req, res) => {
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
         return res.status(400).json({ errors: errors.array() });
     }
 
     try {
-        if (!req.files || !req.files['coverImage'] || !req.files['audioFile']) {
-            return res.status(400).json({ msg: 'Необходимо загрузить обложку и аудио файл' });
-        }
-
-        const { title, author, description, genre } = req.body;
-        const coverImage = req.files['coverImage'][0].path;
-        const audioFile = req.files['audioFile'][0].path;
-
         const book = await Book.create({
-            title,
-            author,
-            description,
-            genre,
-            coverImage,
-            audioFile,
-            userId: req.user.id
+            ...req.body,
+            addedById: req.user.id
         });
 
-        res.json(book);
+        res.status(201).json(book);
     } catch (err) {
-        console.error(err.message);
-        // Удаляем загруженные файлы в случае ошибки
-        if (req.files) {
-            Object.values(req.files).forEach(files => {
-                files.forEach(file => {
-                    fs.unlink(file.path, (unlinkErr) => {
-                        if (unlinkErr) console.error('Ошибка при удалении файла:', unlinkErr);
-                    });
-                });
-            });
-        }
-        res.status(500).send('Ошибка сервера');
+        console.error('Ошибка при добавлении книги:', err);
+        res.status(500).json({ msg: 'Ошибка сервера' });
     }
 });
 
 // @route   PUT api/books/:id
 // @desc    Обновить книгу
-// @access  Private
-router.put('/:id', auth, async (req, res) => {
+// @access  Private (только автор или модератор)
+router.put('/:id', [auth, bookValidation], async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+        return res.status(400).json({ errors: errors.array() });
+    }
+
     try {
         const book = await Book.findByPk(req.params.id);
-        
+
         if (!book) {
             return res.status(404).json({ msg: 'Книга не найдена' });
         }
 
-        // Проверяем, является ли пользователь владельцем книги
-        if (book.userId !== req.user.id) {
-            return res.status(403).json({ msg: 'Нет прав на редактирование этой книги' });
+        // Проверяем права на редактирование
+        if (book.addedById !== req.user.id && req.user.role !== 'moderator' && req.user.role !== 'admin') {
+            return res.status(403).json({ msg: 'Нет прав на редактирование' });
         }
 
-        const { title, author, description, genre } = req.body;
-        
-        await book.update({
-            title: title || book.title,
-            author: author || book.author,
-            description: description || book.description,
-            genre: genre || book.genre
-        });
-
+        await book.update(req.body);
         res.json(book);
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Ошибка сервера');
+        console.error('Ошибка при обновлении книги:', err);
+        res.status(500).json({ msg: 'Ошибка сервера' });
     }
 });
 
 // @route   DELETE api/books/:id
 // @desc    Удалить книгу
-// @access  Private
+// @access  Private (только автор или администратор)
 router.delete('/:id', auth, async (req, res) => {
     try {
         const book = await Book.findByPk(req.params.id);
-        
+
         if (!book) {
             return res.status(404).json({ msg: 'Книга не найдена' });
         }
 
-        // Проверяем, является ли пользователь владельцем книги
-        if (book.userId !== req.user.id) {
-            return res.status(403).json({ msg: 'Нет прав на удаление этой книги' });
-        }
-
-        // Удаляем связанные файлы
-        if (book.coverImage) {
-            fs.unlink(book.coverImage, (err) => {
-                if (err) console.error('Ошибка при удалении обложки:', err);
-            });
-        }
-        if (book.audioFile) {
-            fs.unlink(book.audioFile, (err) => {
-                if (err) console.error('Ошибка при удалении аудио файла:', err);
-            });
+        // Проверяем права на удаление
+        if (book.addedById !== req.user.id && req.user.role !== 'admin') {
+            return res.status(403).json({ msg: 'Нет прав на удаление' });
         }
 
         await book.destroy();
         res.json({ msg: 'Книга удалена' });
     } catch (err) {
-        console.error(err.message);
-        res.status(500).send('Ошибка сервера');
+        console.error('Ошибка при удалении книги:', err);
+        res.status(500).json({ msg: 'Ошибка сервера' });
+    }
+});
+
+// @route   POST api/books/:id/approve
+// @desc    Одобрить книгу (только для модераторов)
+// @access  Private (только модератор)
+router.post('/:id/approve', [auth, checkRole('moderator', 'admin')], async (req, res) => {
+    try {
+        const book = await Book.findByPk(req.params.id);
+
+        if (!book) {
+            return res.status(404).json({ msg: 'Книга не найдена' });
+        }
+
+        await book.update({ 
+            isApproved: true,
+            approvedAt: new Date(),
+            approvedById: req.user.id
+        });
+
+        res.json(book);
+    } catch (err) {
+        console.error('Ошибка при одобрении книги:', err);
+        res.status(500).json({ msg: 'Ошибка сервера' });
+    }
+});
+
+// @route   POST api/books/:id/reject
+// @desc    Отклонить книгу (только для модераторов)
+// @access  Private (только модератор)
+router.post('/:id/reject', [auth, checkRole('moderator', 'admin')], async (req, res) => {
+    const { reason } = req.body;
+
+    if (!reason) {
+        return res.status(400).json({ msg: 'Требуется указать причину отклонения' });
+    }
+
+    try {
+        const book = await Book.findByPk(req.params.id);
+
+        if (!book) {
+            return res.status(404).json({ msg: 'Книга не найдена' });
+        }
+
+        await book.update({ 
+            isApproved: false,
+            rejectionReason: reason,
+            rejectedAt: new Date(),
+            rejectedById: req.user.id
+        });
+
+        res.json(book);
+    } catch (err) {
+        console.error('Ошибка при отклонении книги:', err);
+        res.status(500).json({ msg: 'Ошибка сервера' });
     }
 });
 
