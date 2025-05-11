@@ -27,17 +27,13 @@ router.post('/register', [
             return res.status(400).json({ msg: 'Пользователь уже существует' });
         }
 
-        user = await User.findOne({ username });
+        user = await User.findOne({ where: { username } });
         if (user) {
             return res.status(400).json({ msg: 'Это имя пользователя уже занято' });
         }
 
         // Создаем нового пользователя
-        user = new User({
-            username,
-            email,
-            password
-        });
+        user = new User({ name: username, email, password });
 
         await user.save();
 
