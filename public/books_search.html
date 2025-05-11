@@ -625,7 +625,7 @@
                     titleElement.className = 'book-title';
                     titleElement.textContent = book.title;
                     titleElement.onclick = function() {
-                        window.location.href = `book_details.html?title=${encodeURIComponent(book.title)}`;
+                        window.location.href = `/book/${book.id}`;
                     };
                     card.appendChild(titleElement);
 
@@ -860,7 +860,7 @@
             titleElement.className = 'book-title';
             titleElement.textContent = title;
             titleElement.onclick = function() {
-                window.location.href = `book_details.html?title=${encodeURIComponent(title)}`;
+                window.location.href = `/book/${book.id}`;
             };
             card.appendChild(titleElement);
 
@@ -915,7 +915,7 @@
                 document.getElementById('profileName').textContent = `${currentUser.name} ${currentUser.surname}`;
                 document.getElementById('profileEmail').textContent = currentUser.email;
             } else {
-                window.location.href = 'login.html';
+                window.location.href = '/login';
             }
         }
 
@@ -925,7 +925,7 @@
         });
 
         document.getElementById('editProfileBtn').addEventListener('click', function() {
-            window.location.href = 'registration.html?edit=true';
+            window.location.href = '/register?edit=true';
         });
 
         document.getElementById('changeAvatarBtn').addEventListener('click', function() {
@@ -953,7 +953,7 @@
 
         document.getElementById('logoutBtn').addEventListener('click', function() {
             localStorage.removeItem('currentUser');
-            window.location.href = 'login.html';
+            window.location.href = '/login';
         });
 
         // Закрытие дропдауна при клике вне его

@@ -149,7 +149,7 @@
             <button type="submit" class="submit-btn">Войти</button>
         </form>
         <div class="register-link">
-            Нет аккаунта? <a href="registration.html">Зарегистрироваться</a>
+            Нет аккаунта? <a href="/register">Зарегистрироваться</a>
         </div>
     </div>
 
@@ -196,7 +196,7 @@
                     localStorage.setItem('currentUser', JSON.stringify(user));
                     
                     // Перенаправляем на страницу поиска книг
-                    window.location.href = 'books_search.html';
+                    window.location.href = '/books';
                 } else {
                     showError('email', 'Пользователь с таким email не найден');
                 }
