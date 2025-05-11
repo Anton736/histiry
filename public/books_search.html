@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Поиск книг - Histiry</title>
-    <link rel="stylesheet" href="/css/styles.css">
     <style>
         * {
             margin: 0;
@@ -12,481 +11,174 @@
             box-sizing: border-box;
             font-family: 'Arial', sans-serif;
         }
-
         body {
             background-color: #f5f5f5;
+            min-height: 100vh;
             padding: 2rem;
         }
-
-        .search-container {
-            max-width: 800px;
-            margin: 0 auto;
+        .container {
             background-color: white;
             padding: 2rem;
             border-radius: 10px;
             box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            max-width: 900px;
+            margin: 2rem auto;
         }
-
-        .search-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 2rem;
-            gap: 1rem;
-        }
-
-        .search-input {
-            flex: 1;
-            padding: 1rem;
-            font-size: 1rem;
-            border: 2px solid #ddd;
-            border-radius: 5px;
-            transition: border-color 0.3s;
-        }
-
-        .search-input:focus {
-            outline: none;
-            border-color: #4CAF50;
-        }
-
-        .search-mode {
-            display: flex;
-            gap: 1rem;
-            background-color: #f0f0f0;
-            padding: 0.5rem;
-            border-radius: 5px;
-        }
-
-        .mode-btn {
-            padding: 0.5rem 1rem;
-            border: none;
-            border-radius: 3px;
-            cursor: pointer;
-            background-color: transparent;
-            transition: background-color 0.3s;
-        }
-
-        .mode-btn.active {
-            background-color: #4CAF50;
-            color: white;
-        }
-
-        .books-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 1.5rem;
-            margin-top: 2rem;
-        }
-
-        .book-card {
-            position: relative;
-            background-color: white;
-            border: 1px solid #eee;
-            border-radius: 8px;
-            padding: 1.5rem;
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
-
-        .book-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        }
-
-        .book-card:hover .upload-btn {
-            opacity: 1;
-        }
-
-        .book-card:hover .delete-btn {
-            opacity: 1;
-        }
-
-        .book-title {
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-            color: #333;
-            cursor: pointer;
-            transition: color 0.3s;
-        }
-
-        .book-title:hover {
-            color: #4CAF50;
-        }
-
-        .book-author {
-            color: #666;
-            font-style: italic;
-        }
-
-        .highlight {
-            background-color: #ffeb3b;
-            padding: 0 2px;
-        }
-
-        .highlight-author {
-            color: #4CAF50;
-            font-weight: bold;
-        }
-
-        .book-image {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-            border-radius: 4px;
-            margin-bottom: 1rem;
-        }
-
-        .book-image-placeholder {
-            width: 100%;
-            height: 200px;
-            background-color: #f0f0f0;
-            border-radius: 4px;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #999;
-            font-size: 0.9rem;
-        }
-
-        .upload-btn {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            background-color: rgba(76, 175, 80, 0.9);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .upload-btn:hover {
-            background-color: #45a049;
-        }
-
-        .delete-btn {
-            position: absolute;
-            top: 10px;
-            right: 50px;
-            background-color: rgba(244, 67, 54, 0.9);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 30px;
-            height: 30px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-
-        .delete-btn:hover {
-            background-color: #d32f2f;
-        }
-
-        .no-results {
+        h2 {
             text-align: center;
-            padding: 2rem;
-            color: #666;
-            display: none;
-        }
-
-        .add-book-form {
-            background-color: white;
-            padding: 1.5rem;
-            border-radius: 8px;
             margin-bottom: 2rem;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            color: #333;
         }
-
-        .form-row {
+        .search-section {
             display: flex;
             gap: 1rem;
-            margin-bottom: 1rem;
+            margin-bottom: 2rem;
         }
-
-        .form-group {
+        .search-section input, .search-section select {
             flex: 1;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 0.5rem;
-            color: #555;
-        }
-
-        .form-group input {
-            width: 100%;
             padding: 0.8rem;
             border: 1px solid #ddd;
             border-radius: 5px;
             font-size: 1rem;
         }
-
-        .add-btn {
+        .search-section button {
+            padding: 0.8rem 1.5rem;
             background-color: #4CAF50;
             color: white;
             border: none;
-            padding: 0.8rem 1.5rem;
             border-radius: 5px;
-            cursor: pointer;
             font-size: 1rem;
+            cursor: pointer;
             transition: background-color 0.3s;
         }
-
-        .add-btn:hover {
+        .search-section button:hover {
             background-color: #45a049;
         }
-
-        .preview-image {
+        table {
             width: 100%;
-            height: 200px;
-            object-fit: cover;
-            border-radius: 4px;
-            margin-top: 0.5rem;
-            display: none;
-        }
-
-        .audio-preview {
-            margin-top: 0.5rem;
-            width: 100%;
-        }
-
-        .audio-preview audio {
-            width: 100%;
-        }
-
-        .audio-preview-label {
-            display: block;
-            margin-top: 0.5rem;
-            color: #666;
-            font-size: 0.9rem;
-        }
-
-        .header {
-            background-color: #4CAF50;
-            color: white;
-            padding: 1rem;
-            text-align: center;
-            position: relative;
-        }
-
-        .user-profile {
-            position: absolute;
-            right: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-        }
-
-        .user-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 2px solid white;
-        }
-
-        .user-name {
-            color: white;
-            font-size: 0.9rem;
-        }
-
-        .profile-dropdown {
-            position: absolute;
-            right: 20px;
-            top: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
             background: white;
-            border-radius: 5px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            padding: 1rem;
-            display: none;
-            z-index: 1000;
-            min-width: 200px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
         }
-
-        .profile-dropdown.active {
-            display: block;
-        }
-
-        .profile-header {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin-bottom: 1rem;
-            padding-bottom: 1rem;
+        th, td {
+            padding: 0.9rem 1rem;
             border-bottom: 1px solid #eee;
-        }
-
-        .profile-header .user-avatar {
-            width: 60px;
-            height: 60px;
-        }
-
-        .profile-info {
-            flex: 1;
-        }
-
-        .profile-info h3 {
-            margin: 0;
-            color: #333;
-            font-size: 1rem;
-        }
-
-        .profile-info p {
-            margin: 5px 0 0;
-            color: #666;
-            font-size: 0.9rem;
-        }
-
-        .profile-actions {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .profile-btn {
-            padding: 8px 12px;
-            border: none;
-            border-radius: 4px;
-            background: #f5f5f5;
-            color: #333;
-            cursor: pointer;
-            transition: background-color 0.3s;
             text-align: left;
         }
-
-        .profile-btn:hover {
-            background: #e0e0e0;
+        th {
+            background: #f2f6fa;
+            color: #333;
         }
-
-        .profile-btn.logout {
+        tr:last-child td {
+            border-bottom: none;
+        }
+        .btn-edit, .btn-delete {
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            border: none;
+            font-size: 1rem;
+            cursor: pointer;
+            margin-right: 0.5rem;
+        }
+        .btn-edit {
+            background: #4CAF50;
+            color: white;
+        }
+        .btn-edit:hover {
+            background: #45a049;
+        }
+        .btn-delete {
             background: #ff4444;
             color: white;
         }
-
-        .profile-btn.logout:hover {
-            background: #cc0000;
+        .btn-delete:hover {
+            background: #c82333;
         }
-
-        /* Стили для модального окна */
+        .pagination {
+            margin-top: 2rem;
+            text-align: center;
+        }
+        .pagination button {
+            margin: 0 0.2rem;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            border: none;
+            background: #eee;
+            color: #333;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .pagination button.active, .pagination button:hover {
+            background: #4CAF50;
+            color: white;
+        }
         .modal {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.8);
-            z-index: 2000;
-            justify-content: center;
+            z-index: 1000;
+            left: 0; top: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.25);
             align-items: center;
+            justify-content: center;
         }
-
+        .modal.active {
+            display: flex;
+        }
         .modal-content {
-            max-width: 90%;
-            max-height: 90%;
-            position: relative;
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            min-width: 320px;
+            max-width: 95vw;
         }
-
-        .modal-image {
-            max-width: 100%;
-            max-height: 90vh;
-            border-radius: 8px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
-        }
-
-        .modal-close {
-            position: absolute;
-            top: -40px;
-            right: 0;
-            color: white;
-            font-size: 30px;
-            cursor: pointer;
-            background: none;
-            border: none;
-            padding: 5px;
-        }
-
-        .modal-close:hover {
-            color: #ff4444;
+        @media (max-width: 700px) {
+            .container {
+                padding: 1rem;
+            }
+            .search-section {
+                flex-direction: column;
+            }
+            th, td {
+                padding: 0.6rem 0.5rem;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <header>
-            <h1>Библиотека книг</h1>
-            <nav>
-                <button onclick="logout()" class="btn-logout">Выйти</button>
-            </nav>
-        </header>
-
+        <h2>Поиск и управление книгами</h2>
         <div class="search-section">
-            <div class="search-filters">
-                <input 
-                    type="text" 
-                    id="searchInput" 
-                    placeholder="Поиск по названию или автору"
-                    onkeyup="searchBooks()"
-                >
-                <select id="genreFilter" onchange="searchBooks()">
-                    <option value="">Все жанры</option>
-                    <option value="fiction">Художественная литература</option>
-                    <option value="non-fiction">Научно-популярная</option>
-                    <option value="science">Наука</option>
-                    <option value="history">История</option>
-                    <option value="biography">Биография</option>
-                    <option value="other">Другое</option>
-                </select>
-                <input 
-                    type="number" 
-                    id="yearFilter" 
-                    placeholder="Год издания"
-                    onchange="searchBooks()"
-                >
-            </div>
-
-            <button onclick="showAddBookForm()" class="btn-add">Добавить книгу</button>
+            <input type="text" id="searchInput" placeholder="Поиск по названию...">
+            <select id="genreFilter">
+                <option value="">Все жанры</option>
+                <!-- жанры можно добавить динамически -->
+            </select>
+            <input type="number" id="yearFilter" placeholder="Год">
+            <button onclick="searchBooks()">Поиск</button>
+            <button onclick="document.getElementById('bookFormModal').classList.add('active')">Добавить книгу</button>
         </div>
-
-        <div class="books-table">
-            <table id="booksTable">
-                <thead>
-                    <tr>
-                        <th>Название</th>
-                        <th>Автор</th>
-                        <th>Жанр</th>
-                        <th>Год</th>
-                        <th>Действия</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Books will be loaded here -->
-                </tbody>
-            </table>
-        </div>
-
-        <div class="pagination">
-            <!-- Pagination will be loaded here -->
-        </div>
-
-        <!-- Add/Edit Book Modal -->
-        <div id="bookModal" class="modal">
+        <table id="booksTable">
+            <thead>
+                <tr>
+                    <th>Название</th>
+                    <th>Автор</th>
+                    <th>Жанр</th>
+                    <th>Год</th>
+                    <th>Действия</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Книги будут подгружаться сюда -->
+            </tbody>
+        </table>
+        <div class="pagination"></div>
+        <!-- Модальное окно для добавления/редактирования книги -->
+        <div class="modal" id="bookFormModal">
             <div class="modal-content">
-                <span class="close">&times;</span>
-                <h2 id="modalTitle">Добавить книгу</h2>
                 <form id="bookForm">
                     <input type="hidden" id="bookId">
                     <div class="form-group">
@@ -499,29 +191,22 @@
                     </div>
                     <div class="form-group">
                         <label for="genre">Жанр</label>
-                        <select id="genre">
-                            <option value="fiction">Художественная литература</option>
-                            <option value="non-fiction">Научно-популярная</option>
-                            <option value="science">Наука</option>
-                            <option value="history">История</option>
-                            <option value="biography">Биография</option>
-                            <option value="other">Другое</option>
-                        </select>
+                        <input type="text" id="genre">
                     </div>
                     <div class="form-group">
-                        <label for="year">Год издания</label>
-                        <input type="number" id="year" min="1000" max="2024">
+                        <label for="year">Год</label>
+                        <input type="number" id="year">
                     </div>
                     <div class="form-group">
                         <label for="description">Описание</label>
-                        <textarea id="description" rows="4"></textarea>
+                        <textarea id="description" rows="3"></textarea>
                     </div>
-                    <button type="submit" class="btn-submit">Сохранить</button>
+                    <button type="submit" class="btn-edit">Сохранить</button>
+                    <button type="button" onclick="document.getElementById('bookFormModal').classList.remove('active')">Отмена</button>
                 </form>
             </div>
         </div>
     </div>
-
     <script src="/js/auth.js"></script>
     <script src="/js/books.js"></script>
 </body>
