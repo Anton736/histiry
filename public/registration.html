@@ -40,7 +40,7 @@
             margin-bottom: 0.5rem;
             color: #555;
         }
-        .form-group input {
+        .form-group input, .form-group select {
             width: 100%;
             padding: 0.8rem;
             border: 1px solid #ddd;
@@ -48,7 +48,7 @@
             font-size: 1rem;
             transition: border-color 0.3s;
         }
-        .form-group input:focus {
+        .form-group input:focus, .form-group select:focus {
             outline: none;
             border-color: #4CAF50;
         }
@@ -120,44 +120,38 @@
         <h2 class="form-title">Регистрация</h2>
         <form id="registrationForm">
             <div class="form-group">
-                <label for="name">Имя пользователя</label>
-                <input 
-                    type="text" 
-                    id="name" 
-                    name="name" 
-                    required 
-                    autocomplete="username"
-                    pattern="[a-zA-Z0-9_]+"
-                    minlength="3"
-                    maxlength="30"
-                    placeholder="Только буквы, цифры и знак подчеркивания"
-                >
-                <div class="error-message" id="nameError"></div>
+                <label for="firstName">Имя</label>
+                <input type="text" id="firstName" name="firstName" required minlength="2" maxlength="30" placeholder="Ваше имя">
+                <div class="error-message" id="firstNameError"></div>
             </div>
-
+            <div class="form-group">
+                <label for="lastName">Фамилия</label>
+                <input type="text" id="lastName" name="lastName" required minlength="2" maxlength="30" placeholder="Ваша фамилия">
+                <div class="error-message" id="lastNameError"></div>
+            </div>
+            <div class="form-group">
+                <label for="birthYear">Год рождения</label>
+                <input type="number" id="birthYear" name="birthYear" required min="1900" max="2024" placeholder="Например, 2000">
+                <div class="error-message" id="birthYearError"></div>
+            </div>
+            <div class="form-group">
+                <label for="gender">Пол</label>
+                <select id="gender" name="gender" required>
+                    <option value="">Выберите пол</option>
+                    <option value="male">Мужской</option>
+                    <option value="female">Женский</option>
+                    <option value="other">Другое</option>
+                </select>
+                <div class="error-message" id="genderError"></div>
+            </div>
             <div class="form-group">
                 <label for="email">Email</label>
-                <input 
-                    type="email" 
-                    id="email" 
-                    name="email" 
-                    required 
-                    autocomplete="email"
-                    placeholder="example@domain.com"
-                >
+                <input type="email" id="email" name="email" required autocomplete="email" placeholder="example@domain.com">
                 <div class="error-message" id="emailError"></div>
             </div>
-
             <div class="form-group">
                 <label for="password">Пароль</label>
-                <input 
-                    type="password" 
-                    id="password" 
-                    name="password" 
-                    required 
-                    autocomplete="new-password"
-                    minlength="6"
-                >
+                <input type="password" id="password" name="password" required autocomplete="new-password" minlength="6">
                 <div class="error-message" id="passwordError"></div>
                 <div class="password-requirements">
                     Пароль должен содержать:
@@ -169,23 +163,14 @@
                     </ul>
                 </div>
             </div>
-
             <div class="form-group">
                 <label for="confirmPassword">Подтверждение пароля</label>
-                <input 
-                    type="password" 
-                    id="confirmPassword" 
-                    name="confirmPassword" 
-                    required 
-                    autocomplete="new-password"
-                >
+                <input type="password" id="confirmPassword" name="confirmPassword" required autocomplete="new-password">
                 <div class="error-message" id="confirmPasswordError"></div>
             </div>
-
             <button type="submit" class="submit-btn">Зарегистрироваться</button>
             <div class="success-message" id="registerSuccess">Регистрация прошла успешно! <a href="/books">Перейти к книгам</a></div>
         </form>
-
         <div class="login-link">
             Уже есть аккаунт? <a href="/login">Войти</a>
         </div>
@@ -193,7 +178,6 @@
             <a href="/books">Перейти к поиску книг</a>
         </div>
     </div>
-
     <script src="/js/auth.js"></script>
 </body>
 </html> 
