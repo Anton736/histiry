@@ -24,6 +24,21 @@
             max-width: 900px;
             margin: 2rem auto;
         }
+        .nav-links {
+            text-align: right;
+            margin-bottom: 1.5rem;
+        }
+        .nav-links a {
+            color: #4CAF50;
+            text-decoration: none;
+            font-weight: bold;
+            margin-left: 1.5rem;
+            transition: color 0.3s;
+        }
+        .nav-links a:hover {
+            color: #45a049;
+            text-decoration: underline;
+        }
         .book-header {
             display: flex;
             gap: 2rem;
@@ -54,15 +69,19 @@
             align-items: center;
             margin: 0.5rem 0;
         }
-        .rating span {
+        .rating .star {
             color: #ffb347;
-            font-size: 1.3rem;
+            font-size: 1.7rem;
             cursor: pointer;
+            transition: color 0.2s;
+        }
+        .rating .star.selected, .rating .star:hover, .rating .star:hover ~ .star {
+            color: #ff9800;
         }
         .book-content {
             margin-top: 2rem;
         }
-        .description-section, .audio-section, .comments-section {
+        .description-section, .audio-section, .resume-section {
             margin-bottom: 2rem;
         }
         textarea {
@@ -90,33 +109,21 @@
         .admin-controls {
             margin-top: 1rem;
         }
-        .comments-section h2 {
-            margin-bottom: 1rem;
+        .resume-label {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            display: block;
         }
-        .add-comment {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-        .add-comment textarea {
-            flex: 1;
-            margin-bottom: 0;
-        }
-        .comment {
+        .resume-content {
             background: #f6f8fa;
             border-radius: 8px;
             padding: 1rem;
             margin-bottom: 1rem;
             box-shadow: 0 1px 2px rgba(0,0,0,0.03);
         }
-        .comment-header {
-            display: flex;
-            justify-content: space-between;
-            font-size: 0.95rem;
-            color: #666;
-        }
-        .comment-author {
-            font-weight: 600;
+        .audio-section audio {
+            width: 100%;
+            margin-top: 0.5rem;
         }
         @media (max-width: 700px) {
             .container {
@@ -131,30 +138,22 @@
 </head>
 <body>
     <div class="container">
-        <nav style="display: flex; justify-content: space-between; margin-bottom: 2rem;">
-            <button onclick="window.location.href='/books'" class="btn-back">← Назад к списку</button>
-            <button onclick="logout()" class="btn-logout">Выйти</button>
-        </nav>
+        <div class="nav-links">
+            <a href="/books">← Назад к списку</a>
+            <a href="/login" onclick="logout()">Выйти</a>
+        </div>
         <div class="book-details">
             <div class="book-header">
                 <div class="book-cover">
                     <img id="bookCover" src="/images/default-cover.jpg" alt="Обложка книги">
-                    <div class="admin-controls" style="display: none;">
-                        <label for="coverUpload" class="btn-upload">Загрузить обложку</label>
-                        <input type="file" id="coverUpload" accept="image/*" onchange="uploadCoverImage(this.files[0])" style="display: none;">
-                    </div>
                 </div>
                 <div class="book-info">
                     <h1 id="bookTitle"></h1>
                     <p class="author">Автор: <span id="bookAuthor"></span></p>
                     <p class="genre">Жанр: <span id="bookGenre"></span></p>
                     <p class="year">Год издания: <span id="bookYear"></span></p>
-                    <div class="rating">
-                        <span onclick="rateBook(1)">★</span>
-                        <span onclick="rateBook(2)">★</span>
-                        <span onclick="rateBook(3)">★</span>
-                        <span onclick="rateBook(4)">★</span>
-                        <span onclick="rateBook(5)">★</span>
+                    <div class="rating" id="ratingStars">
+                        <!-- Звезды будут отрисованы JS -->
                     </div>
                 </div>
             </div>
@@ -162,29 +161,20 @@
                 <div class="description-section">
                     <h2>Описание</h2>
                     <p id="bookDescription"></p>
-                    <div class="admin-controls" style="display: none;">
-                        <textarea id="descriptionEdit" rows="4"></textarea>
-                        <button onclick="updateDescription(document.getElementById('descriptionEdit').value)" class="btn-save">Сохранить описание</button>
-                    </div>
                 </div>
                 <div class="audio-section">
                     <h2>Аудио версия</h2>
-                    <audio id="bookAudio" controls style="display: none; width: 100%;">
+                    <audio id="bookAudio" controls style="display: none;">
                         Ваш браузер не поддерживает аудио элемент.
                     </audio>
-                    <div class="admin-controls" style="display: none;">
-                        <label for="audioUpload" class="btn-upload">Загрузить аудио</label>
-                        <input type="file" id="audioUpload" accept="audio/*" onchange="uploadAudioFile(this.files[0])" style="display: none;">
-                    </div>
                 </div>
-                <div class="comments-section">
-                    <h2>Комментарии</h2>
-                    <div class="add-comment">
-                        <textarea id="commentText" placeholder="Напишите ваш комментарий..."></textarea>
-                        <button onclick="addComment(document.getElementById('commentText').value)" class="btn-submit">Отправить</button>
-                    </div>
-                    <div id="commentsList">
-                        <!-- Comments will be loaded here -->
+                <div class="resume-section">
+                    <h2>Резюме книги</h2>
+                    <div id="resumeContent" class="resume-content">Пока резюме не добавлено.</div>
+                    <div class="admin-controls" id="resumeControls" style="display: none;">
+                        <label for="resumeText" class="resume-label">Добавить/изменить резюме (только для администратора)</label>
+                        <textarea id="resumeText" rows="4" placeholder="Введите резюме книги..."></textarea>
+                        <button onclick="saveResume()" class="btn-save">Сохранить резюме</button>
                     </div>
                 </div>
             </div>
@@ -192,5 +182,21 @@
     </div>
     <script src="/js/auth.js"></script>
     <script src="/js/book-details.js"></script>
+    <script>
+    // Динамическая отрисовка звезд
+    function renderStars(rating) {
+        const starsContainer = document.getElementById('ratingStars');
+        starsContainer.innerHTML = '';
+        for (let i = 1; i <= 5; i++) {
+            const star = document.createElement('span');
+            star.className = 'star' + (i <= rating ? ' selected' : '');
+            star.textContent = '★';
+            star.onclick = () => rateBook(i);
+            starsContainer.appendChild(star);
+        }
+    }
+    // Пример вызова: renderStars(3);
+    // В book-details.js должен быть вызов renderStars с текущей оценкой книги
+    </script>
 </body>
 </html> 
