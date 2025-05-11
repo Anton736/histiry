@@ -22,7 +22,7 @@ router.post('/register', [
 
     try {
         // Проверяем, существует ли пользователь
-        let user = await User.findOne({ email });
+        let user = await User.findOne({ where: { email } });
         if (user) {
             return res.status(400).json({ msg: 'Пользователь уже существует' });
         }
@@ -79,7 +79,7 @@ router.post('/login', [
 
     try {
         // Проверяем существование пользователя
-        let user = await User.findOne({ email });
+        let user = await User.findOne({ where: { email } });
         if (!user) {
             return res.status(400).json({ msg: 'Неверные учетные данные' });
         }
