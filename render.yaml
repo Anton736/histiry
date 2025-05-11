@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: histiry
+    env: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: MAX_FILE_SIZE
+        value: 10485760
+      - key: UPLOAD_DIR
+        value: /uploads
+    disk:
+      name: histiry-uploads
+      mountPath: /uploads
+      sizeGB: 1 
