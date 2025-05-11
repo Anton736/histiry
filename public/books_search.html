@@ -543,371 +543,123 @@
     </div>
 
     <script>
-        const searchInput = document.getElementById('searchInput');
-        const booksList = document.getElementById('booksList');
-        const noResults = document.getElementById('noResults');
-        const modeButtons = document.querySelectorAll('.mode-btn');
-        let bookCards = document.querySelectorAll('.book-card');
-        let currentMode = 'title';
+        let booksList = document.querySelector('.books-list');
+        let searchInput = document.getElementById('searchInput');
+        let bookCards = [];
+        let allBooks = [];
 
-        // Функция сохранения книг в localStorage
-        function saveBooks() {
-            const books = Array.from(bookCards).map((card, index) => ({
-                id: card.dataset.id || `book_${Date.now()}_${index}`,
-                title: card.dataset.title,
-                author: card.dataset.author,
-                image: card.querySelector('.book-image')?.src || null,
-                description: card.dataset.description || 'Описание книги будет добавлено позже.',
-                audio: card.dataset.audio || '',
-                isUserAdded: card.dataset.isUserAdded === 'true'
-            }));
-            localStorage.setItem('books', JSON.stringify(books));
-        }
-
-        // Функция загрузки книг из localStorage
-        function loadBooks() {
-            const savedBooks = localStorage.getItem('books');
-            if (savedBooks) {
-                // Очищаем существующие карточки
-                booksList.innerHTML = '';
-                
-                const books = JSON.parse(savedBooks);
-                books.forEach(book => {
-                    const card = document.createElement('div');
-                    card.className = 'book-card';
-                    card.setAttribute('data-id', book.id);
-                    card.setAttribute('data-title', book.title);
-                    card.setAttribute('data-author', book.author);
-                    card.setAttribute('data-description', book.description);
-                    card.setAttribute('data-audio', book.audio);
-                    card.setAttribute('data-is-user-added', book.isUserAdded);
-
-                    if (book.image) {
-                        const img = document.createElement('img');
-                        img.src = book.image;
-                        img.className = 'book-image';
-                        card.appendChild(img);
-                    } else {
-                        const placeholder = document.createElement('div');
-                        placeholder.className = 'book-image-placeholder';
-                        placeholder.textContent = 'Нет изображения';
-                        card.appendChild(placeholder);
-                    }
-
-                    const uploadBtn = document.createElement('input');
-                    uploadBtn.type = 'file';
-                    uploadBtn.className = 'upload-btn';
-                    uploadBtn.accept = 'image/*';
-                    uploadBtn.onchange = function() { handleImageUpload(this); };
-                    card.appendChild(uploadBtn);
-
-                    const deleteBtn = document.createElement('button');
-                    deleteBtn.className = 'delete-btn';
-                    deleteBtn.textContent = '×';
-                    deleteBtn.onclick = function() {
-                        if (confirm('Вы уверены, что хотите удалить эту книгу?')) {
-                            // Удаляем книгу из localStorage
-                            const savedBooks = JSON.parse(localStorage.getItem('books') || '[]');
-                            const updatedBooks = savedBooks.filter(b => b.title !== book.title);
-                            localStorage.setItem('books', JSON.stringify(updatedBooks));
-                            
-                            // Удаляем связанные данные
-                            localStorage.removeItem(`comments_${book.title}`);
-                            localStorage.removeItem(`reviews_${book.title}`);
-                            localStorage.removeItem(`gallery_${book.title}`);
-                            
-                            // Удаляем карточку
-                            card.remove();
-                            filterBooks();
-                        }
-                    };
-                    card.appendChild(deleteBtn);
-
-                    const titleElement = document.createElement('div');
-                    titleElement.className = 'book-title';
-                    titleElement.textContent = book.title;
-                    titleElement.onclick = function() {
-                        window.location.href = `/book/${book.id}`;
-                    };
-                    card.appendChild(titleElement);
-
-                    const authorElement = document.createElement('div');
-                    authorElement.className = 'book-author';
-                    authorElement.textContent = book.author;
-                    card.appendChild(authorElement);
-
-                    booksList.appendChild(card);
-                });
-                bookCards = document.querySelectorAll('.book-card');
+        // Загрузка книг с сервера
+        async function loadBooks() {
+            try {
+                const response = await fetch('/api/books');
+                allBooks = await response.json();
+                renderBooks(allBooks);
+            } catch (error) {
+                booksList.innerHTML = '<div class="error-message">Ошибка при загрузке книг</div>';
             }
         }
 
-        // Загружаем сохраненные книги при загрузке страницы
-        loadBooks();
+        // Рендер книг
+        function renderBooks(books) {
+            booksList.innerHTML = '';
+            books.forEach(book => {
+                const card = document.createElement('div');
+                card.className = 'book-card';
+                card.setAttribute('data-id', book.id);
 
-        // Обработчик переключения режима поиска
-        modeButtons.forEach(button => {
-            button.addEventListener('click', () => {
-                modeButtons.forEach(btn => btn.classList.remove('active'));
-                button.classList.add('active');
-                currentMode = button.dataset.mode;
-                filterBooks();
-            });
-        });
-
-        // Функция фильтрации книг
-        function filterBooks() {
-            const searchTerm = searchInput.value.toLowerCase();
-            let hasVisibleItems = false;
-
-            bookCards.forEach(card => {
-                const searchField = currentMode === 'title' 
-                    ? card.dataset.title 
-                    : card.dataset.author;
-                
-                // Очищаем предыдущее выделение
-                const textElement = currentMode === 'title' 
-                    ? card.querySelector('.book-title')
-                    : card.querySelector('.book-author');
-                textElement.innerHTML = textElement.textContent;
-                
-                if (searchTerm) {
-                    let searchRegex;
-                    if (currentMode === 'author') {
-                        // Для поиска по автору: 'ё' может быть и 'е', и 'ё'
-                        searchRegex = new RegExp(
-                            searchTerm
-                                .replace(/ё/g, '[ё]')
-                                .replace(/е/g, '[её]'),
-                            'gi'
-                        );
-                    } else {
-                        // Для поиска по названию: 'е' только как 'е', 'ё' только как 'ё'
-                        searchRegex = new RegExp(
-                            searchTerm
-                                .replace(/ё/g, '[ё]')
-                                .replace(/е/g, '[её]'),
-                            'gi'
-                        );
-                    }
-
-                    if (searchRegex.test(searchField.toLowerCase())) {
-                        card.style.display = 'block';
-                        hasVisibleItems = true;
-                        
-                        const text = textElement.textContent;
-                        const highlightedText = text.replace(searchRegex, match => 
-                            currentMode === 'title' 
-                                ? `<span class="highlight">${match}</span>`
-                                : `<span class="highlight-author">${match}</span>`
-                        );
-                        textElement.innerHTML = highlightedText;
-                    } else {
-                        card.style.display = 'none';
-                    }
+                // Обложка
+                if (book.image_path) {
+                    const img = document.createElement('img');
+                    img.src = `/uploads/${book.image_path}`;
+                    img.className = 'book-image';
+                    card.appendChild(img);
                 } else {
-                    // При пустой строке показываем все книги
-                    card.style.display = 'block';
-                    hasVisibleItems = true;
+                    const placeholder = document.createElement('div');
+                    placeholder.className = 'book-image-placeholder';
+                    placeholder.textContent = 'Нет изображения';
+                    card.appendChild(placeholder);
                 }
+
+                // Кнопка удаления
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'delete-btn';
+                deleteBtn.textContent = '×';
+                deleteBtn.onclick = async function() {
+                    if (confirm('Вы уверены, что хотите удалить эту книгу?')) {
+                        try {
+                            const resp = await fetch(`/api/books/${book.id}`, {
+                                method: 'DELETE',
+                                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                            });
+                            if (resp.ok) {
+                                loadBooks();
+                            } else {
+                                alert('Ошибка при удалении книги');
+                            }
+                        } catch (e) {
+                            alert('Ошибка при удалении книги');
+                        }
+                    }
+                };
+                card.appendChild(deleteBtn);
+
+                // Заголовок (переход на страницу книги)
+                const titleElement = document.createElement('div');
+                titleElement.className = 'book-title';
+                titleElement.textContent = book.title;
+                titleElement.onclick = function() {
+                    window.location.href = `/book/${book.id}`;
+                };
+                card.appendChild(titleElement);
+
+                // Автор
+                const authorElement = document.createElement('div');
+                authorElement.className = 'book-author';
+                authorElement.textContent = book.author;
+                card.appendChild(authorElement);
+
+                booksList.appendChild(card);
             });
-
-            // Показываем/скрываем сообщение "Ничего не найдено"
-            noResults.style.display = hasVisibleItems ? 'none' : 'block';
-        }
-
-        // Функция загрузки изображения
-        function handleImageUpload(input) {
-            const file = input.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const card = input.closest('.book-card');
-                    const placeholder = card.querySelector('.book-image-placeholder');
-                    
-                    // Создаем новый элемент изображения
-                    const img = document.createElement('img');
-                    img.src = e.target.result;
-                    img.className = 'book-image';
-                    
-                    // Заменяем placeholder на изображение
-                    placeholder.replaceWith(img);
-                    
-                    // Сохраняем изменения
-                    saveBooks();
-                };
-                reader.readAsDataURL(file);
-            }
-        }
-
-        // Функция предпросмотра изображения
-        function previewNewBookImage(input) {
-            const preview = document.getElementById('imagePreview');
-            if (input.files && input.files[0]) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    preview.src = e.target.result;
-                    preview.style.display = 'block';
-                }
-                reader.readAsDataURL(input.files[0]);
-            }
-        }
-
-        // Функция предпросмотра аудио
-        function previewNewBookAudio(input) {
-            const preview = document.getElementById('audioPreview');
-            if (input.files && input.files[0]) {
-                const audio = document.createElement('audio');
-                audio.controls = true;
-                audio.src = URL.createObjectURL(input.files[0]);
-                preview.innerHTML = '';
-                preview.appendChild(audio);
-            }
-        }
-
-        // Функция добавления новой книги
-        function addNewBook() {
-            const title = document.getElementById('bookTitle').value.trim();
-            const author = document.getElementById('bookAuthor').value.trim();
-            const imageFile = document.getElementById('bookImage').files[0];
-            const audioFile = document.getElementById('bookAudio').files[0];
-            
-            if (!title || !author) {
-                alert('Пожалуйста, заполните все поля');
-                return;
-            }
-
-            // Проверяем, существует ли уже книга с таким названием
-            const savedBooks = JSON.parse(localStorage.getItem('books') || '[]');
-            if (savedBooks.some(book => book.title === title)) {
-                alert('Книга с таким названием уже существует');
-                return;
-            }
-
-            // Создаем карточку книги
-            const card = document.createElement('div');
-            card.className = 'book-card';
-            const bookId = `book_${Date.now()}_${savedBooks.length}`;
-            card.setAttribute('data-id', bookId);
-            card.setAttribute('data-title', title);
-            card.setAttribute('data-author', author);
-            card.setAttribute('data-description', 'Описание книги будет добавлено позже.');
-            card.setAttribute('data-is-user-added', 'true');
-
-            // Обработка изображения
-            if (imageFile) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = document.createElement('img');
-                    img.src = e.target.result;
-                    img.className = 'book-image';
-                    card.insertBefore(img, card.firstChild);
-                    card.setAttribute('data-image', e.target.result);
-                };
-                reader.readAsDataURL(imageFile);
-            } else {
-                const placeholder = document.createElement('div');
-                placeholder.className = 'book-image-placeholder';
-                placeholder.textContent = 'Нет изображения';
-                card.insertBefore(placeholder, card.firstChild);
-            }
-
-            // Обработка аудио
-            if (audioFile) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    card.setAttribute('data-audio', e.target.result);
-                };
-                reader.readAsDataURL(audioFile);
-            }
-
-            // Добавляем кнопки управления
-            const uploadBtn = document.createElement('input');
-            uploadBtn.type = 'file';
-            uploadBtn.className = 'upload-btn';
-            uploadBtn.accept = 'image/*';
-            uploadBtn.onchange = function() { handleImageUpload(this); };
-            card.appendChild(uploadBtn);
-
-            const audioUploadBtn = document.createElement('input');
-            audioUploadBtn.type = 'file';
-            audioUploadBtn.className = 'upload-btn';
-            audioUploadBtn.accept = 'audio/*';
-            audioUploadBtn.style.right = '50px';
-            audioUploadBtn.onchange = function() { handleAudioUpload(this); };
-            card.appendChild(audioUploadBtn);
-
-            const deleteBtn = document.createElement('button');
-            deleteBtn.className = 'delete-btn';
-            deleteBtn.textContent = '×';
-            deleteBtn.onclick = function() {
-                if (confirm('Вы уверены, что хотите удалить эту книгу?')) {
-                    // Удаляем книгу из localStorage
-                    const savedBooks = JSON.parse(localStorage.getItem('books') || '[]');
-                    const updatedBooks = savedBooks.filter(b => b.title !== title);
-                    localStorage.setItem('books', JSON.stringify(updatedBooks));
-                    
-                    // Удаляем связанные данные
-                    localStorage.removeItem(`comments_${title}`);
-                    localStorage.removeItem(`reviews_${title}`);
-                    localStorage.removeItem(`gallery_${title}`);
-                    
-                    // Удаляем карточку
-                    card.remove();
-                    filterBooks();
-                }
-            };
-            card.appendChild(deleteBtn);
-
-            // Добавляем заголовок и автора
-            const titleElement = document.createElement('div');
-            titleElement.className = 'book-title';
-            titleElement.textContent = title;
-            titleElement.onclick = function() {
-                window.location.href = `/book/${bookId}`;
-            };
-            card.appendChild(titleElement);
-
-            const authorElement = document.createElement('div');
-            authorElement.className = 'book-author';
-            authorElement.textContent = author;
-            card.appendChild(authorElement);
-
-            // Добавляем карточку в список
-            booksList.appendChild(card);
-
-            // Очищаем форму
-            document.getElementById('bookTitle').value = '';
-            document.getElementById('bookAuthor').value = '';
-            document.getElementById('bookImage').value = '';
-            document.getElementById('bookAudio').value = '';
-            document.getElementById('imagePreview').style.display = 'none';
-            document.getElementById('audioPreview').innerHTML = '';
-
-            // Сохраняем изменения
-            saveBooks();
-
-            // Обновляем список карточек и применяем текущий фильтр
             bookCards = document.querySelectorAll('.book-card');
-            filterBooks();
         }
 
-        // Функция загрузки аудио
-        function handleAudioUpload(input) {
-            const file = input.files[0];
-            if (file) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const card = input.closest('.book-card');
-                    card.setAttribute('data-audio', e.target.result);
-                    saveBooks();
-                };
-                reader.readAsDataURL(file);
+        // Поиск по книгам
+        function filterBooks() {
+            const query = searchInput.value.toLowerCase();
+            const filtered = allBooks.filter(book =>
+                book.title.toLowerCase().includes(query) ||
+                book.author.toLowerCase().includes(query)
+            );
+            renderBooks(filtered);
+        }
+
+        searchInput.addEventListener('input', filterBooks);
+
+        // Добавление книги (пример, если есть форма)
+        async function addBook(title, author, imageFile, audioFile) {
+            const formData = new FormData();
+            formData.append('title', title);
+            formData.append('author', author);
+            if (imageFile) formData.append('coverImage', imageFile);
+            if (audioFile) formData.append('audioFile', audioFile);
+            try {
+                const resp = await fetch('/api/books', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+                    body: formData
+                });
+                if (resp.ok) {
+                    loadBooks();
+                } else {
+                    alert('Ошибка при добавлении книги');
+                }
+            } catch (e) {
+                alert('Ошибка при добавлении книги');
             }
         }
 
-        // Обработчик события ввода
-        searchInput.addEventListener('input', filterBooks);
+        // Загрузка книг при старте
+        loadBooks();
 
         // Загрузка данных пользователя
         function loadUserProfile() {
