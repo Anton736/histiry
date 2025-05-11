@@ -61,6 +61,15 @@
             margin-top: 0.3rem;
             display: none;
         }
+        .success-message {
+            color: #2e7d32;
+            background: #e8f5e9;
+            border: 1px solid #b9f6ca;
+            border-radius: 5px;
+            padding: 0.7rem 1rem;
+            margin-bottom: 1rem;
+            display: none;
+        }
         .password-requirements {
             font-size: 0.9rem;
             color: #888;
@@ -88,19 +97,19 @@
             background-color: #cccccc;
             cursor: not-allowed;
         }
-        .login-link {
+        .login-link, .to-books-link {
             text-align: center;
             margin-top: 1rem;
             padding-top: 1rem;
             border-top: 1px solid #ddd;
         }
-        .login-link a {
+        .login-link a, .to-books-link a {
             color: #4CAF50;
             text-decoration: none;
             font-weight: bold;
             transition: color 0.3s;
         }
-        .login-link a:hover {
+        .login-link a:hover, .to-books-link a:hover {
             color: #45a049;
             text-decoration: underline;
         }
@@ -174,10 +183,14 @@
             </div>
 
             <button type="submit" class="submit-btn">Зарегистрироваться</button>
+            <div class="success-message" id="registerSuccess">Регистрация прошла успешно! <a href="/books">Перейти к книгам</a></div>
         </form>
 
         <div class="login-link">
             Уже есть аккаунт? <a href="/login">Войти</a>
+        </div>
+        <div class="to-books-link">
+            <a href="/books">Перейти к поиску книг</a>
         </div>
     </div>
 
