@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 const { check, validationResult } = require('express-validator');
 const auth = require('../middleware/auth');
 const Book = require('../models/Book');
@@ -9,24 +10,55 @@ const Book = require('../models/Book');
 // Настройка Multer для загрузки файлов
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, 'uploads/');
+        const uploadDir = 'uploads/';
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        cb(null, uploadDir);
     },
     filename: function (req, file, cb) {
         cb(null, Date.now() + '-' + file.originalname);
     }
 });
 
-const upload = multer({ storage: storage });
+const fileFilter = (req, file, cb) => {
+    if (file.fieldname === 'coverImage') {
+        if (file.mimetype.startsWith('image/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Только изображения разрешены для обложки'), false);
+        }
+    } else if (file.fieldname === 'audioFile') {
+        if (file.mimetype.startsWith('audio/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Только аудио файлы разрешены'), false);
+        }
+    } else {
+        cb(new Error('Неподдерживаемый тип файла'), false);
+    }
+};
+
+const upload = multer({ 
+    storage: storage,
+    fileFilter: fileFilter,
+    limits: {
+        fileSize: 10 * 1024 * 1024 // 10MB limit
+    }
+});
 
 // @route   GET api/books
 // @desc    Получить все книги
 // @access  Public
 router.get('/', async (req, res) => {
     try {
-        const books = await Book.find()
-            .populate('reviews')
-            .populate('comments')
-            .sort({ createdAt: -1 });
+        const books = await Book.findAll({
+            include: [
+                { model: require('../models/Review') },
+                { model: require('../models/Comment') }
+            ],
+            order: [['createdAt', 'DESC']]
+        });
         res.json(books);
     } catch (err) {
         console.error(err.message);
@@ -39,9 +71,12 @@ router.get('/', async (req, res) => {
 // @access  Public
 router.get('/:id', async (req, res) => {
     try {
-        const book = await Book.findById(req.params.id)
-            .populate('reviews')
-            .populate('comments');
+        const book = await Book.findByPk(req.params.id, {
+            include: [
+                { model: require('../models/Review') },
+                { model: require('../models/Comment') }
+            ]
+        });
         
         if (!book) {
             return res.status(404).json({ msg: 'Книга не найдена' });
@@ -50,9 +85,6 @@ router.get('/:id', async (req, res) => {
         res.json(book);
     } catch (err) {
         console.error(err.message);
-        if (err.kind === 'ObjectId') {
-            return res.status(404).json({ msg: 'Книга не найдена' });
-        }
         res.status(500).send('Ошибка сервера');
     }
 });
@@ -79,23 +111,37 @@ router.post('/', [
     }
 
     try {
+        if (!req.files || !req.files['coverImage'] || !req.files['audioFile']) {
+            return res.status(400).json({ msg: 'Необходимо загрузить обложку и аудио файл' });
+        }
+
         const { title, author, description, genre } = req.body;
         const coverImage = req.files['coverImage'][0].path;
         const audioFile = req.files['audioFile'][0].path;
 
-        const newBook = new Book({
+        const book = await Book.create({
             title,
             author,
             description,
             genre,
             coverImage,
-            audioFile
+            audioFile,
+            userId: req.user.id
         });
 
-        const book = await newBook.save();
         res.json(book);
     } catch (err) {
         console.error(err.message);
+        // Удаляем загруженные файлы в случае ошибки
+        if (req.files) {
+            Object.values(req.files).forEach(files => {
+                files.forEach(file => {
+                    fs.unlink(file.path, (unlinkErr) => {
+                        if (unlinkErr) console.error('Ошибка при удалении файла:', unlinkErr);
+                    });
+                });
+            });
+        }
         res.status(500).send('Ошибка сервера');
     }
 });
@@ -105,27 +151,29 @@ router.post('/', [
 // @access  Private
 router.put('/:id', auth, async (req, res) => {
     try {
-        const book = await Book.findById(req.params.id);
+        const book = await Book.findByPk(req.params.id);
         
         if (!book) {
             return res.status(404).json({ msg: 'Книга не найдена' });
         }
 
+        // Проверяем, является ли пользователь владельцем книги
+        if (book.userId !== req.user.id) {
+            return res.status(403).json({ msg: 'Нет прав на редактирование этой книги' });
+        }
+
         const { title, author, description, genre } = req.body;
         
-        // Обновляем только предоставленные поля
-        if (title) book.title = title;
-        if (author) book.author = author;
-        if (description) book.description = description;
-        if (genre) book.genre = genre;
+        await book.update({
+            title: title || book.title,
+            author: author || book.author,
+            description: description || book.description,
+            genre: genre || book.genre
+        });
 
-        await book.save();
         res.json(book);
     } catch (err) {
         console.error(err.message);
-        if (err.kind === 'ObjectId') {
-            return res.status(404).json({ msg: 'Книга не найдена' });
-        }
         res.status(500).send('Ошибка сервера');
     }
 });
@@ -135,19 +183,33 @@ router.put('/:id', auth, async (req, res) => {
 // @access  Private
 router.delete('/:id', auth, async (req, res) => {
     try {
-        const book = await Book.findById(req.params.id);
+        const book = await Book.findByPk(req.params.id);
         
         if (!book) {
             return res.status(404).json({ msg: 'Книга не найдена' });
         }
 
-        await book.remove();
+        // Проверяем, является ли пользователь владельцем книги
+        if (book.userId !== req.user.id) {
+            return res.status(403).json({ msg: 'Нет прав на удаление этой книги' });
+        }
+
+        // Удаляем связанные файлы
+        if (book.coverImage) {
+            fs.unlink(book.coverImage, (err) => {
+                if (err) console.error('Ошибка при удалении обложки:', err);
+            });
+        }
+        if (book.audioFile) {
+            fs.unlink(book.audioFile, (err) => {
+                if (err) console.error('Ошибка при удалении аудио файла:', err);
+            });
+        }
+
+        await book.destroy();
         res.json({ msg: 'Книга удалена' });
     } catch (err) {
         console.error(err.message);
-        if (err.kind === 'ObjectId') {
-            return res.status(404).json({ msg: 'Книга не найдена' });
-        }
         res.status(500).send('Ошибка сервера');
     }
 });
