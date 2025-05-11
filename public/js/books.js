@@ -2,9 +2,11 @@
 const API_URL = '/api';
 
 // Load books on page load
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
     if (window.location.pathname === '/books') {
-        loadBooks();
+        if (await checkAuth()) {
+            loadBooks();
+        }
     }
 });
 
@@ -24,6 +26,10 @@ async function loadBooks(page = 1, search = '', genre = '', year = '') {
         });
 
         if (!response.ok) {
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
             throw new Error('Failed to load books');
         }
 
@@ -48,8 +54,10 @@ function displayBooks(books) {
             <td>${book.genre || '-'}</td>
             <td>${book.year || '-'}</td>
             <td>
-                <button onclick="editBook(${book.id})" class="btn-edit">Редактировать</button>
-                <button onclick="deleteBook(${book.id})" class="btn-delete">Удалить</button>
+                ${isAdmin() ? `
+                    <button onclick="editBook(${book.id})" class="btn-edit">Редактировать</button>
+                    <button onclick="deleteBook(${book.id})" class="btn-delete">Удалить</button>
+                ` : ''}
             </td>
         </tr>
     `).join('');
@@ -57,6 +65,17 @@ function displayBooks(books) {
 
 // Add new book
 async function addBook(formData) {
+    if (!isAdmin()) {
+        alert('У вас нет прав для добавления книг');
+        return;
+    }
+
+    // Validate form data
+    if (!formData.title || !formData.author) {
+        alert('Пожалуйста, заполните все обязательные поля');
+        return;
+    }
+
     try {
         const response = await fetch(`${API_URL}/books`, {
             method: 'POST',
@@ -65,6 +84,10 @@ async function addBook(formData) {
         });
 
         if (!response.ok) {
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
             throw new Error('Failed to add book');
         }
 
@@ -78,12 +101,21 @@ async function addBook(formData) {
 
 // Edit book
 async function editBook(id) {
+    if (!isAdmin()) {
+        alert('У вас нет прав для редактирования книг');
+        return;
+    }
+
     try {
         const response = await fetch(`${API_URL}/books/${id}`, {
             headers: getAuthHeaders()
         });
 
         if (!response.ok) {
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
             throw new Error('Failed to load book');
         }
 
@@ -103,6 +135,11 @@ async function editBook(id) {
 
 // Delete book
 async function deleteBook(id) {
+    if (!isAdmin()) {
+        alert('У вас нет прав для удаления книг');
+        return;
+    }
+
     if (!confirm('Вы уверены, что хотите удалить эту книгу?')) {
         return;
     }
@@ -114,6 +151,10 @@ async function deleteBook(id) {
         });
 
         if (!response.ok) {
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
             throw new Error('Failed to delete book');
         }
 
@@ -160,12 +201,18 @@ document.getElementById('bookForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const formData = {
-        title: document.getElementById('title').value,
-        author: document.getElementById('author').value,
+        title: document.getElementById('title').value.trim(),
+        author: document.getElementById('author').value.trim(),
         genre: document.getElementById('genre').value,
         year: document.getElementById('year').value,
-        description: document.getElementById('description').value
+        description: document.getElementById('description').value.trim()
     };
+
+    // Validate form data
+    if (!formData.title || !formData.author) {
+        alert('Пожалуйста, заполните все обязательные поля');
+        return;
+    }
 
     const bookId = document.getElementById('bookId').value;
     
@@ -179,6 +226,10 @@ document.getElementById('bookForm')?.addEventListener('submit', async (e) => {
             });
 
             if (!response.ok) {
+                if (response.status === 401) {
+                    window.location.href = '/login';
+                    return;
+                }
                 throw new Error('Failed to update book');
             }
 

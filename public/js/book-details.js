@@ -9,6 +9,10 @@ const isAdmin = () => {
 
 // Load book details
 async function loadBookDetails() {
+    if (!await checkAuth()) {
+        return;
+    }
+
     const bookId = window.location.pathname.split('/').pop();
     
     try {
@@ -17,6 +21,10 @@ async function loadBookDetails() {
         });
 
         if (!response.ok) {
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
             throw new Error('Failed to load book details');
         }
 
@@ -24,10 +32,13 @@ async function loadBookDetails() {
         displayBookDetails(book);
         
         // Show/hide admin controls
-        const adminControls = document.querySelector('.admin-controls');
-        if (adminControls) {
-            adminControls.style.display = isAdmin() ? 'block' : 'none';
-        }
+        const adminControls = document.querySelectorAll('.admin-controls');
+        adminControls.forEach(control => {
+            control.style.display = isAdmin() ? 'block' : 'none';
+        });
+
+        // Load comments
+        loadComments(bookId);
     } catch (error) {
         console.error('Error loading book details:', error);
         alert('Ошибка при загрузке деталей книги');
@@ -64,6 +75,23 @@ async function uploadCoverImage(file) {
         return;
     }
 
+    if (!file) {
+        alert('Пожалуйста, выберите файл');
+        return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+        alert('Пожалуйста, выберите изображение');
+        return;
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+        alert('Размер файла не должен превышать 5MB');
+        return;
+    }
+
     const formData = new FormData();
     formData.append('coverImage', file);
 
@@ -77,6 +105,10 @@ async function uploadCoverImage(file) {
         });
 
         if (!response.ok) {
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
             throw new Error('Failed to upload cover image');
         }
 
@@ -95,6 +127,23 @@ async function uploadAudioFile(file) {
         return;
     }
 
+    if (!file) {
+        alert('Пожалуйста, выберите файл');
+        return;
+    }
+
+    // Validate file type
+    if (!file.type.startsWith('audio/')) {
+        alert('Пожалуйста, выберите аудио файл');
+        return;
+    }
+
+    // Validate file size (max 50MB)
+    if (file.size > 50 * 1024 * 1024) {
+        alert('Размер файла не должен превышать 50MB');
+        return;
+    }
+
     const formData = new FormData();
     formData.append('audioFile', file);
 
@@ -108,6 +157,10 @@ async function uploadAudioFile(file) {
         });
 
         if (!response.ok) {
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
             throw new Error('Failed to upload audio file');
         }
 
@@ -126,6 +179,11 @@ async function updateDescription(description) {
         return;
     }
 
+    if (!description.trim()) {
+        alert('Описание не может быть пустым');
+        return;
+    }
+
     try {
         const response = await fetch(`${API_URL}/books/${window.location.pathname.split('/').pop()}`, {
             method: 'PUT',
@@ -134,6 +192,10 @@ async function updateDescription(description) {
         });
 
         if (!response.ok) {
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
             throw new Error('Failed to update description');
         }
 
@@ -145,8 +207,57 @@ async function updateDescription(description) {
     }
 }
 
+// Load comments
+async function loadComments(bookId) {
+    try {
+        const response = await fetch(`${API_URL}/books/${bookId}/comments`, {
+            headers: getAuthHeaders()
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
+            throw new Error('Failed to load comments');
+        }
+
+        const comments = await response.json();
+        displayComments(comments);
+    } catch (error) {
+        console.error('Error loading comments:', error);
+        alert('Ошибка при загрузке комментариев');
+    }
+}
+
+// Display comments
+function displayComments(comments) {
+    const commentsList = document.getElementById('commentsList');
+    if (!commentsList) return;
+
+    if (comments.length === 0) {
+        commentsList.innerHTML = '<p class="no-comments">Пока нет комментариев</p>';
+        return;
+    }
+
+    commentsList.innerHTML = comments.map(comment => `
+        <div class="comment">
+            <div class="comment-header">
+                <span class="comment-author">${comment.author}</span>
+                <span class="comment-date">${new Date(comment.date).toLocaleDateString()}</span>
+            </div>
+            <div class="comment-text">${comment.text}</div>
+        </div>
+    `).join('');
+}
+
 // Add comment
 async function addComment(comment) {
+    if (!comment.trim()) {
+        alert('Комментарий не может быть пустым');
+        return;
+    }
+
     try {
         const response = await fetch(`${API_URL}/books/${window.location.pathname.split('/').pop()}/comments`, {
             method: 'POST',
@@ -155,11 +266,15 @@ async function addComment(comment) {
         });
 
         if (!response.ok) {
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
             throw new Error('Failed to add comment');
         }
 
-        alert('Комментарий успешно добавлен');
-        loadBookDetails();
+        document.getElementById('commentText').value = '';
+        loadComments(window.location.pathname.split('/').pop());
     } catch (error) {
         console.error('Error adding comment:', error);
         alert('Ошибка при добавлении комментария');
@@ -168,6 +283,11 @@ async function addComment(comment) {
 
 // Rate book
 async function rateBook(rating) {
+    if (rating < 1 || rating > 5) {
+        alert('Оценка должна быть от 1 до 5');
+        return;
+    }
+
     try {
         const response = await fetch(`${API_URL}/books/${window.location.pathname.split('/').pop()}/rate`, {
             method: 'POST',
@@ -176,6 +296,10 @@ async function rateBook(rating) {
         });
 
         if (!response.ok) {
+            if (response.status === 401) {
+                window.location.href = '/login';
+                return;
+            }
             throw new Error('Failed to rate book');
         }
 

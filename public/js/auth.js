@@ -23,8 +23,9 @@ document.getElementById('registrationForm')?.addEventListener('submit', async (e
         const data = await response.json();
 
         if (response.ok) {
-            // Save token to localStorage
+            // Save token and user data to localStorage
             localStorage.setItem('token', data.token);
+            localStorage.setItem('userEmail', data.email);
             // Redirect to books page
             window.location.href = '/books';
         } else {
@@ -59,8 +60,9 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
         const data = await response.json();
 
         if (response.ok) {
-            // Save token to localStorage
+            // Save token and user data to localStorage
             localStorage.setItem('token', data.token);
+            localStorage.setItem('userEmail', data.email);
             // Redirect to books page
             window.location.href = '/books';
         } else {
@@ -74,18 +76,39 @@ document.getElementById('loginForm')?.addEventListener('submit', async (e) => {
 });
 
 // Check if user is authenticated
-const checkAuth = () => {
+const checkAuth = async () => {
     const token = localStorage.getItem('token');
     if (!token) {
         window.location.href = '/login';
         return false;
     }
-    return true;
+
+    try {
+        // Verify token with server
+        const response = await fetch(`${API_URL}/auth/verify`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Invalid token');
+        }
+
+        return true;
+    } catch (error) {
+        console.error('Auth check error:', error);
+        localStorage.removeItem('token');
+        localStorage.removeItem('userEmail');
+        window.location.href = '/login';
+        return false;
+    }
 };
 
 // Logout function
 const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('userEmail');
     window.location.href = '/login';
 };
 
