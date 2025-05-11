@@ -552,7 +552,8 @@
 
         // Функция сохранения книг в localStorage
         function saveBooks() {
-            const books = Array.from(bookCards).map(card => ({
+            const books = Array.from(bookCards).map((card, index) => ({
+                id: card.dataset.id || `book_${Date.now()}_${index}`,
                 title: card.dataset.title,
                 author: card.dataset.author,
                 image: card.querySelector('.book-image')?.src || null,
@@ -574,6 +575,7 @@
                 books.forEach(book => {
                     const card = document.createElement('div');
                     card.className = 'book-card';
+                    card.setAttribute('data-id', book.id);
                     card.setAttribute('data-title', book.title);
                     card.setAttribute('data-author', book.author);
                     card.setAttribute('data-description', book.description);
@@ -785,6 +787,8 @@
             // Создаем карточку книги
             const card = document.createElement('div');
             card.className = 'book-card';
+            const bookId = `book_${Date.now()}_${savedBooks.length}`;
+            card.setAttribute('data-id', bookId);
             card.setAttribute('data-title', title);
             card.setAttribute('data-author', author);
             card.setAttribute('data-description', 'Описание книги будет добавлено позже.');
@@ -860,7 +864,7 @@
             titleElement.className = 'book-title';
             titleElement.textContent = title;
             titleElement.onclick = function() {
-                window.location.href = `/book/${book.id}`;
+                window.location.href = `/book/${bookId}`;
             };
             card.appendChild(titleElement);
 

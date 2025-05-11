@@ -41,6 +41,18 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
+        .book-image-placeholder {
+            width: 300px;
+            height: 400px;
+            background-color: #f0f0f0;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #999;
+            font-size: 1.2rem;
+        }
+
         .book-info {
             flex: 1;
         }
@@ -64,18 +76,37 @@
             margin-bottom: 2rem;
         }
 
-        .audio-section {
-            margin-top: 2rem;
-            padding: 1rem;
-            background-color: #f8f8f8;
-            border-radius: 8px;
+        .book-actions {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
         }
 
-        .audio-title {
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin-bottom: 1rem;
+        .action-btn {
+            padding: 0.8rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s;
+        }
+
+        .action-btn.primary {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .action-btn.primary:hover {
+            background-color: #45a049;
+        }
+
+        .action-btn.secondary {
+            background-color: #f0f0f0;
             color: #333;
+        }
+
+        .action-btn.secondary:hover {
+            background-color: #e0e0e0;
         }
 
         .back-btn {
@@ -93,9 +124,27 @@
             background-color: #45a049;
         }
 
-        audio {
+        .audio-section {
+            margin-top: 2rem;
+            padding: 1rem;
+            background-color: #f8f8f8;
+            border-radius: 8px;
+        }
+
+        .audio-title {
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: #333;
+        }
+
+        .audio-player {
             width: 100%;
             margin-top: 1rem;
+        }
+
+        .audio-player audio {
+            width: 100%;
         }
 
         .reviews-section {
@@ -787,81 +836,39 @@
         <a href="books_search.html" class="back-btn">← Назад к списку книг</a>
         
         <div class="book-header">
-            <img id="bookImage" class="book-image" src="" alt="Обложка книги">
+            <div id="bookImageContainer" class="book-image-placeholder">
+                Нет изображения
+            </div>
+            
             <div class="book-info">
-                <h1 id="bookTitle" class="book-title"></h1>
-                <div id="bookAuthor" class="book-author"></div>
-                <div id="bookDescription" class="book-description"></div>
-                <div class="edit-control" style="display: none;">
-                    <button class="edit-btn" onclick="toggleEditMode()">Редактировать книгу</button>
-                    <button class="save-btn" onclick="saveBookChanges()" style="display: none;">Сохранить изменения</button>
+                <h1 class="book-title" id="bookTitle"></h1>
+                <div class="book-author" id="bookAuthor"></div>
+                <div class="book-description" id="bookDescription"></div>
+                
+                <div class="book-actions">
+                    <button class="action-btn primary" id="readBtn">Читать</button>
+                    <button class="action-btn secondary" id="addToFavoritesBtn">В избранное</button>
+                </div>
+
+                <div id="audioPlayer" class="audio-player" style="display: none;">
+                    <audio controls>
+                        <source src="" type="audio/mpeg">
+                        Ваш браузер не поддерживает аудио элемент.
+                    </audio>
                 </div>
             </div>
-        </div>
-
-        <div class="audio-section">
-            <div class="audio-title">Аудиоверсия книги</div>
-            <audio id="bookAudio" controls>
-                <source src="" type="audio/mpeg">
-                Ваш браузер не поддерживает аудио элемент.
-            </audio>
         </div>
 
         <div class="reviews-section">
-            <div class="reviews-title">Ваша оценка</div>
-            <div class="average-rating" id="averageRating">
-                <!-- Средний рейтинг будет добавлен здесь -->
-            </div>
+            <h2 class="reviews-title">Отзывы</h2>
             
-            <!-- Раздел со звездами -->
-            <div class="rating-section">
-                <div class="rating-title">Оцените книгу</div>
-                <div class="rating-container">
-                    <div class="rating-stars" id="ratingStars">
-                        <span class="star" data-rating="1">★</span>
-                        <span class="star" data-rating="2">★</span>
-                        <span class="star" data-rating="3">★</span>
-                        <span class="star" data-rating="4">★</span>
-                        <span class="star" data-rating="5">★</span>
-                    </div>
-                    <div class="rating-value" id="ratingValue"></div>
-                </div>
-            </div>
-
-            <!-- Раздел с текстовой оценкой -->
-            <div class="text-review-section">
-                <div class="text-review-title">Ваш отзыв</div>
-                <form class="review-form" id="reviewForm">
-                    <textarea class="review-input" id="reviewInput" placeholder="Напишите ваш отзыв..." required></textarea>
-                    <button type="submit" class="review-submit">Опубликовать отзыв</button>
-                </form>
+            <div class="review-form">
+                <textarea class="review-input" id="reviewInput" placeholder="Напишите свой отзыв..."></textarea>
+                <button class="action-btn primary" id="submitReviewBtn">Отправить отзыв</button>
             </div>
 
             <div class="reviews-list" id="reviewsList">
-                <!-- Оценки будут добавлены здесь -->
-            </div>
-        </div>
-
-        <div class="comments-section">
-            <div class="comments-title">Комментарии</div>
-            <form class="comment-form" id="commentForm">
-                <textarea class="comment-input" id="commentInput" placeholder="Напишите ваш комментарий..." required></textarea>
-                <button type="submit" class="comment-submit">Отправить комментарий</button>
-            </form>
-            <div class="comments-list" id="commentsList">
-                <!-- Комментарии будут добавлены здесь -->
-            </div>
-        </div>
-
-        <div class="image-gallery">
-            <div class="gallery-title">Галерея изображений</div>
-            <div class="gallery-controls">
-                <input type="file" id="imageUpload" accept="image/*" multiple style="display: none;">
-                <button class="gallery-btn" onclick="document.getElementById('imageUpload').click()">Добавить изображения</button>
-                <button class="gallery-btn" id="clearImagesBtn">Очистить все изображения</button>
-            </div>
-            <div class="gallery-images" id="galleryImages">
-                <!-- Изображения будут добавлены здесь -->
+                <!-- Отзывы будут добавлены динамически -->
             </div>
         </div>
     </div>
@@ -977,15 +984,16 @@
                 document.getElementById('bookTitle').textContent = bookTitle;
                 document.getElementById('bookAuthor').textContent = 'Автор: ' + (savedBook.author || 'Не указан');
                 document.getElementById('bookDescription').textContent = savedBook.description || 'Описание отсутствует';
-                document.getElementById('bookImage').src = savedBook.image || 'https://via.placeholder.com/300x450?text=Нет+изображения';
+                document.getElementById('bookImageContainer').replaceWith(document.createElement('img'));
+                document.getElementById('bookImageContainer').querySelector('img').src = savedBook.image || 'https://via.placeholder.com/300x450?text=Нет+изображения';
                 
                 // Обработка аудио
-                const audioSection = document.querySelector('.audio-section');
+                const audioPlayer = document.getElementById('audioPlayer');
                 if (savedBook.audio) {
-                    document.getElementById('bookAudio').src = savedBook.audio;
-                    audioSection.style.display = 'block';
+                    audioPlayer.style.display = 'block';
+                    audioPlayer.querySelector('audio').src = savedBook.audio;
                 } else {
-                    audioSection.style.display = 'none';
+                    audioPlayer.style.display = 'none';
                 }
             } else {
                 // Если нет сохраненных изменений, используем предустановленные данные
@@ -995,8 +1003,10 @@
                     document.getElementById('bookTitle').textContent = bookTitle;
                     document.getElementById('bookAuthor').textContent = 'Автор: ' + document.querySelector(`[data-title="${bookTitle}"]`)?.dataset.author || 'Не указан';
                     document.getElementById('bookDescription').textContent = book.description || 'Описание отсутствует';
-                    document.getElementById('bookImage').src = book.image || 'https://via.placeholder.com/300x450?text=Нет+изображения';
-                    document.getElementById('bookAudio').src = book.audio || '';
+                    document.getElementById('bookImageContainer').replaceWith(document.createElement('img'));
+                    document.getElementById('bookImageContainer').querySelector('img').src = book.image || 'https://via.placeholder.com/300x450?text=Нет+изображения';
+                    document.getElementById('audioPlayer').style.display = 'block';
+                    document.getElementById('audioPlayer').querySelector('audio').src = book.audio || '';
                 } else {
                     document.body.innerHTML = '<div class="book-container"><h1>Книга не найдена</h1><a href="books_search.html" class="back-btn">← Назад к списку книг</a></div>';
                     return;
@@ -1178,7 +1188,7 @@
         }
 
         // Обработчик отправки формы отзыва
-        document.getElementById('reviewForm').addEventListener('submit', function(e) {
+        document.getElementById('submitReviewBtn').addEventListener('click', function(e) {
             e.preventDefault();
             if (!checkEditAccess()) {
                 alert('У вас нет прав для добавления отзывов');
@@ -1567,8 +1577,8 @@
                 title: bookTitle,
                 author: document.getElementById('bookAuthor').textContent.replace('Автор: ', ''),
                 description: document.getElementById('bookDescription').textContent,
-                image: document.getElementById('bookImage').src,
-                audio: document.getElementById('bookAudio').src
+                image: document.getElementById('bookImageContainer').querySelector('img').src,
+                audio: document.getElementById('audioPlayer').querySelector('audio').src
             };
 
             // Обновляем или добавляем книгу в сохраненные книги
