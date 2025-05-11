@@ -29,6 +29,21 @@
             margin-bottom: 2rem;
             color: #333;
         }
+        .nav-links {
+            text-align: right;
+            margin-bottom: 1.5rem;
+        }
+        .nav-links a {
+            color: #4CAF50;
+            text-decoration: none;
+            font-weight: bold;
+            margin-left: 1.5rem;
+            transition: color 0.3s;
+        }
+        .nav-links a:hover {
+            color: #45a049;
+            text-decoration: underline;
+        }
         .search-section {
             display: flex;
             gap: 1rem;
@@ -135,6 +150,43 @@
             min-width: 320px;
             max-width: 95vw;
         }
+        .form-group {
+            margin-bottom: 1.2rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #555;
+        }
+        .form-group input, .form-group textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        .form-group input[type="file"] {
+            padding: 0.2rem;
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        .form-actions {
+            text-align: right;
+        }
+        .form-actions button {
+            margin-left: 0.5rem;
+        }
+        .cover-preview {
+            margin-bottom: 1rem;
+        }
+        .cover-preview img {
+            max-width: 120px;
+            max-height: 170px;
+            border-radius: 8px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+        }
         @media (max-width: 700px) {
             .container {
                 padding: 1rem;
@@ -150,14 +202,14 @@
 </head>
 <body>
     <div class="container">
+        <div class="nav-links">
+            <a href="/registration">Регистрация</a>
+            <a href="/login">Вход</a>
+        </div>
         <h2>Поиск и управление книгами</h2>
         <div class="search-section">
             <input type="text" id="searchInput" placeholder="Поиск по названию...">
-            <select id="genreFilter">
-                <option value="">Все жанры</option>
-                <!-- жанры можно добавить динамически -->
-            </select>
-            <input type="number" id="yearFilter" placeholder="Год">
+            <input type="text" id="authorInput" placeholder="Поиск по автору...">
             <button onclick="searchBooks()">Поиск</button>
             <button onclick="document.getElementById('bookFormModal').classList.add('active')">Добавить книгу</button>
         </div>
@@ -198,11 +250,22 @@
                         <input type="number" id="year">
                     </div>
                     <div class="form-group">
+                        <label for="cover">Обложка</label>
+                        <input type="file" id="cover" accept="image/*">
+                        <div class="cover-preview" id="coverPreview"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="audio">Аудиофайл</label>
+                        <input type="file" id="audio" accept="audio/*">
+                    </div>
+                    <div class="form-group">
                         <label for="description">Описание</label>
                         <textarea id="description" rows="3"></textarea>
                     </div>
-                    <button type="submit" class="btn-edit">Сохранить</button>
-                    <button type="button" onclick="document.getElementById('bookFormModal').classList.remove('active')">Отмена</button>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-edit">Сохранить</button>
+                        <button type="button" onclick="document.getElementById('bookFormModal').classList.remove('active')">Отмена</button>
+                    </div>
                 </form>
             </div>
         </div>
