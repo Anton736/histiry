@@ -2,42 +2,90 @@
 const API_URL = '/api';
 
 // Handle registration form submission
-document.getElementById('registrationForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const formData = {
-        username: document.getElementById('name').value,
-        email: document.getElementById('email').value,
-        password: document.getElementById('password').value
-    };
+const registrationForm = document.getElementById('registrationForm');
+if (registrationForm) {
+    registrationForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = {
+            firstName: document.getElementById('firstName')?.value || '',
+            lastName: document.getElementById('lastName')?.value || '',
+            birthYear: document.getElementById('birthYear')?.value || '',
+            gender: document.getElementById('gender')?.value || '',
+            email: document.getElementById('email')?.value || '',
+            password: document.getElementById('password')?.value || '',
+            confirmPassword: document.getElementById('confirmPassword')?.value || ''
+        };
 
-    try {
-        const response = await fetch(`${API_URL}/auth/register`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(formData)
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            // Save token and user data to localStorage
-            localStorage.setItem('token', data.token);
-            localStorage.setItem('userEmail', data.email);
-            // Redirect to books page
-            window.location.href = '/books';
+        // Валидация на клиенте (пример)
+        let hasError = false;
+        if (!formData.firstName) {
+            document.getElementById('firstNameError').textContent = 'Введите имя';
+            hasError = true;
         } else {
-            // Show error message
-            const errorMessage = data.errors?.[0]?.msg || data.msg || 'Ошибка при регистрации';
-            alert(errorMessage);
+            document.getElementById('firstNameError').textContent = '';
         }
-    } catch (error) {
-        console.error('Registration error:', error);
-        alert('Ошибка при регистрации. Попробуйте позже.');
-    }
-});
+        if (!formData.lastName) {
+            document.getElementById('lastNameError').textContent = 'Введите фамилию';
+            hasError = true;
+        } else {
+            document.getElementById('lastNameError').textContent = '';
+        }
+        if (!formData.birthYear) {
+            document.getElementById('birthYearError').textContent = 'Введите год рождения';
+            hasError = true;
+        } else {
+            document.getElementById('birthYearError').textContent = '';
+        }
+        if (!formData.gender) {
+            document.getElementById('genderError').textContent = 'Выберите пол';
+            hasError = true;
+        } else {
+            document.getElementById('genderError').textContent = '';
+        }
+        if (!formData.email) {
+            document.getElementById('emailError').textContent = 'Введите email';
+            hasError = true;
+        } else {
+            document.getElementById('emailError').textContent = '';
+        }
+        if (!formData.password) {
+            document.getElementById('passwordError').textContent = 'Введите пароль';
+            hasError = true;
+        } else {
+            document.getElementById('passwordError').textContent = '';
+        }
+        if (formData.password !== formData.confirmPassword) {
+            document.getElementById('confirmPasswordError').textContent = 'Пароли не совпадают';
+            hasError = true;
+        } else {
+            document.getElementById('confirmPasswordError').textContent = '';
+        }
+        if (hasError) return;
+
+        try {
+            const response = await fetch(`${API_URL}/auth/register`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(formData)
+            });
+            const data = await response.json();
+            if (response.ok) {
+                localStorage.setItem('token', data.token);
+                localStorage.setItem('userEmail', data.email);
+                document.getElementById('registerSuccess').style.display = 'block';
+                setTimeout(() => { window.location.href = '/books'; }, 1500);
+            } else {
+                const errorMessage = data.errors?.[0]?.msg || data.msg || 'Ошибка при регистрации';
+                alert(errorMessage);
+            }
+        } catch (error) {
+            console.error('Registration error:', error);
+            alert('Ошибка при регистрации. Попробуйте позже.');
+        }
+    });
+}
 
 // Handle login form submission
 document.getElementById('loginForm')?.addEventListener('submit', async (e) => {

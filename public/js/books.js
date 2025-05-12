@@ -1,30 +1,48 @@
 // Books management
 const API_URL = '/api';
 
-// Load books on page load
-document.addEventListener('DOMContentLoaded', async () => {
+// Навешиваем обработчики событий после загрузки DOM
+window.addEventListener('DOMContentLoaded', async () => {
     if (window.location.pathname === '/books') {
         if (await checkAuth()) {
             loadBooks();
+        }
+        // Кнопка поиска
+        const searchBtn = document.getElementById('searchBtn');
+        if (searchBtn) {
+            searchBtn.addEventListener('click', searchBooks);
+        }
+        // Кнопка открытия модального окна добавления книги
+        const addBookBtn = document.getElementById('addBookBtn');
+        if (addBookBtn) {
+            addBookBtn.addEventListener('click', () => {
+                document.getElementById('bookFormModal').classList.add('active');
+            });
+        }
+        // Кнопка отмены в модальном окне
+        const cancelBtn = document.getElementById('cancelBookBtn');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', () => {
+                document.getElementById('bookFormModal').classList.remove('active');
+            });
         }
     }
 });
 
 // Load books with search and filters
-async function loadBooks(page = 1, search = '', genre = '', year = '') {
+async function loadBooks(page = 1) {
+    const search = document.getElementById('searchInput')?.value || '';
+    const author = document.getElementById('authorInput')?.value || '';
     try {
         const queryParams = new URLSearchParams({
             page,
             limit: 10,
             ...(search && { search }),
-            ...(genre && { genre }),
-            ...(year && { year })
+            ...(author && { author })
         });
-
         const response = await fetch(`${API_URL}/books?${queryParams}`, {
             headers: getAuthHeaders()
         });
-
         if (!response.ok) {
             if (response.status === 401) {
                 window.location.href = '/login';
@@ -32,7 +50,6 @@ async function loadBooks(page = 1, search = '', genre = '', year = '') {
             }
             throw new Error('Failed to load books');
         }
-
         const data = await response.json();
         displayBooks(data.books);
         updatePagination(data.totalPages, data.currentPage);
@@ -46,7 +63,6 @@ async function loadBooks(page = 1, search = '', genre = '', year = '') {
 function displayBooks(books) {
     const tbody = document.querySelector('#booksTable tbody');
     if (!tbody) return;
-
     tbody.innerHTML = books.map(book => `
         <tr>
             <td><a href="/book/${book.id}">${book.title}</a></td>
@@ -55,12 +71,19 @@ function displayBooks(books) {
             <td>${book.year || '-'}</td>
             <td>
                 ${isAdmin() ? `
-                    <button onclick="editBook(${book.id})" class="btn-edit">Редактировать</button>
-                    <button onclick="deleteBook(${book.id})" class="btn-delete">Удалить</button>
+                    <button class="btn-edit" data-id="${book.id}">Редактировать</button>
+                    <button class="btn-delete" data-id="${book.id}">Удалить</button>
                 ` : ''}
             </td>
         </tr>
     `).join('');
+    // Навесим обработчики на кнопки редактирования и удаления
+    document.querySelectorAll('.btn-edit').forEach(btn => {
+        btn.addEventListener('click', () => editBook(btn.dataset.id));
+    });
+    document.querySelectorAll('.btn-delete').forEach(btn => {
+        btn.addEventListener('click', () => deleteBook(btn.dataset.id));
+    });
 }
 
 // Add new book
